@@ -101,10 +101,13 @@ function InferenceEndpointsView() {
     });
   }, [serverUrl, credential]);
 
-  const handleDuplicate = (row) => {
-    setEditEndpoint(null);
-    setInitialFormData(createDuplicateInitialData(row));
-    setShowForm(true);
+  const handleDuplicate = async (row) => {
+    try {
+      row = await api.revealCompletionEndpoint(row.Id);
+      setEditEndpoint(null);
+      setInitialFormData(createDuplicateInitialData(row));
+      setShowForm(true);
+    } catch (error) { setAlert({ title: 'Duplicate failed', message: error.message }); }
   };
 
   const getRowActions = (row) => [
@@ -168,7 +171,7 @@ function InferenceEndpointsView() {
         <button className="btn btn-primary" onClick={() => { setEditEndpoint(null); setInitialFormData(null); setShowForm(true); }}>Create Inference Endpoint</button>
       </div>
       <DataTable tableId="inferenceendpoints-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
-      {showForm && <InferenceEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
+      {showForm && <InferenceEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onRevealEndpoint={id => api.revealCompletionEndpoint(id)} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
       {testTarget && <InferenceEndpointTestModal api={api} endpoint={testTarget} onClose={() => setTestTarget(null)} />}
       {loadTarget && <EndpointModelLoadModal api={api} endpoint={loadTarget} endpointType="completion" onClose={() => setLoadTarget(null)} />}
       {showJson && <JsonViewModal title="Inference Endpoint JSON" data={showJson} onClose={() => setShowJson(null)} />}

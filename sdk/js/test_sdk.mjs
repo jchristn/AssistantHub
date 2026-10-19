@@ -136,6 +136,22 @@ function localOnlyRequested() {
 // ---------------------------------------------------------------------------
 
 async function sdkContractTests(runner) {
+  await runner.runTest("SDK contract: Partio provider settings, null clear and reveal routes", async () => {
+    const calls = [];
+    const client = new AssistantHubClient({ baseUrl: "http://localhost:6600", apiKey: "test-key", fetch: async (url, init) => {
+      calls.push({ url: String(url), init });
+      return new Response(JSON.stringify({ Id: "cep_test", ApiFormat: "Bedrock", ProviderSettings: { Bedrock: { Region: "us-east-1", SecretAccessKey: "****last" } } }), { status: 200 });
+    }});
+    const patch = { ProviderSettings: { Bedrock: { Region: "us-west-2", SessionToken: null } }, ApiKey: null };
+    const result = await client.updateCompletionEndpoint("cep_test", patch);
+    assertEqual(JSON.stringify(patch), calls[0].init.body, "nested/null patch preserved");
+    assertEqual("****last", result.ProviderSettings.Bedrock.SecretAccessKey, "masked response parsed");
+    await client.revealCompletionEndpoint("cep_test");
+    await client.revealEmbeddingEndpoint("eep_test");
+    assertTrue(calls[1].url.endsWith("/completion/cep_test/reveal"), "completion reveal route");
+    assertTrue(calls[2].url.endsWith("/embedding/eep_test/reveal"), "embedding reveal route");
+  });
+
   await runner.runTest("SDK contract: chatCompletion sends attached_document_ids", async () => {
     let capturedUrl = null;
     let capturedInit = null;

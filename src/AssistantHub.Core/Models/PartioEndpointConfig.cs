@@ -44,6 +44,19 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string ApiKey { get; set; } = null;
 
+        /// <summary>Provider-specific connection and authentication settings. Secrets are masked in normal responses.</summary>
+        public ProviderSettings? ProviderSettings { get; set; }
+
+        /// <summary>Server-assigned endpoint creation timestamp.</summary>
+        public System.DateTime? CreatedUtc { get; set; }
+        /// <summary>Server-assigned endpoint update timestamp.</summary>
+        public System.DateTime? LastUpdateUtc { get; set; }
+
+        /// <summary>Per-endpoint request history recording.</summary>
+        public bool EnableRequestHistory { get; set; }
+        /// <summary>Provider tokenization settings managed by Partio.</summary>
+        public System.Collections.Generic.Dictionary<string, object>? Tokenization { get; set; }
+
         /// <summary>
         /// Whether the endpoint is active.
         /// </summary>

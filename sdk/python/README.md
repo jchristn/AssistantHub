@@ -524,3 +524,7 @@ Repository secrets (`s3_secret_key`, `azure_access_key`, `gcp_json_credentials`,
 - `create_credential(tenant_id, credential)` -- Create a credential
 - `update_credential(tenant_id, credential_id, credential)` -- Update a credential
 - `delete_credential(tenant_id, credential_id)` -- Delete a credential
+
+## Partio provider settings
+
+Endpoint create/update accepts nested `ProviderSettings` for selectable authentication, Azure OpenAI, Anthropic, Bedrock, Vertex AI, Cohere and Voyage AI. See [the provider contract](../../REST_API.md#partio-endpoint-providers-and-authentication). Normal responses mask credentials; submit the masked value to preserve it, or null to clear. Omitted nested fields are preserved on update. Use `reveal_embedding_endpoint` / `reveal_completion_endpoint` (sync or async) for an explicit administrator credential reveal, audited by Partio. Keep reveal results out of logs.

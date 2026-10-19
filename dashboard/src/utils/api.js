@@ -548,6 +548,7 @@ export class ApiClient {
   createEmbeddingEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/embedding', endpoint); }
   enumerateEmbeddingEndpoints(params) { return this.request('POST', '/v1.0/endpoints/embedding/enumerate', params || {}); }
   getEmbeddingEndpoint(id) { return this.request('GET', `/v1.0/endpoints/embedding/${id}`); }
+  revealEmbeddingEndpoint(id) { return this.request('GET', `/v1.0/endpoints/embedding/${encodeURIComponent(id)}/reveal`); }
   updateEmbeddingEndpoint(id, endpoint) { return this.request('PUT', `/v1.0/endpoints/embedding/${id}`, endpoint); }
   deleteEmbeddingEndpoint(id) { return this.request('DELETE', `/v1.0/endpoints/embedding/${id}`); }
 
@@ -577,6 +578,7 @@ export class ApiClient {
   createCompletionEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/completion', endpoint); }
   enumerateCompletionEndpoints(params) { return this.request('POST', '/v1.0/endpoints/completion/enumerate', params || {}); }
   getCompletionEndpoint(id) { return this.request('GET', `/v1.0/endpoints/completion/${id}`); }
+  revealCompletionEndpoint(id) { return this.request('GET', `/v1.0/endpoints/completion/${encodeURIComponent(id)}/reveal`); }
   updateCompletionEndpoint(id, endpoint) { return this.request('PUT', `/v1.0/endpoints/completion/${id}`, endpoint); }
   deleteCompletionEndpoint(id) { return this.request('DELETE', `/v1.0/endpoints/completion/${id}`); }
 

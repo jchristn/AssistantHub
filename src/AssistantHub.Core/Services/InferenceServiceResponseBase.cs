@@ -125,7 +125,7 @@ namespace AssistantHub.Core.Services
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
             {
-                InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey);
+                InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey, _Settings.ProviderSettings);
                 HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -164,7 +164,7 @@ namespace AssistantHub.Core.Services
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
             {
-                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, _Settings.ApiKey);
+                InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey, _Settings.ProviderSettings);
 
                 HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);

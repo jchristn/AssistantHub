@@ -38,6 +38,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string ApiKey { get; set; } = null;
 
+        /// <summary>Provider-specific connection and authentication settings. Secrets are masked in normal responses.</summary>
+        public ProviderSettings? ProviderSettings { get; set; }
+        /// <summary>Partio tokenization settings; omitted updates preserve the current value.</summary>
+        public System.Collections.Generic.Dictionary<string, object>? Tokenization { get; set; }
+
         /// <summary>
         /// Whether the endpoint is active.
         /// </summary>

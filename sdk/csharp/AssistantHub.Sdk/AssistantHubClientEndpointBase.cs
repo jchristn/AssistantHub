@@ -386,6 +386,15 @@ namespace AssistantHub.Sdk
             return await SendAsync<EmbeddingEndpoint>(HttpMethod.Get, "/v1.0/endpoints/embedding/" + endpointId, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>Admin-only audited reveal of embedding endpoint secrets.</summary>
+        public async Task<EmbeddingEndpoint> RevealEmbeddingEndpointAsync(string endpointId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+
+            return await SendAsync<EmbeddingEndpoint>(HttpMethod.Get, "/v1.0/endpoints/embedding/" + Uri.EscapeDataString(endpointId) + "/reveal", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Create a new embedding endpoint.
         /// </summary>
@@ -415,6 +424,14 @@ namespace AssistantHub.Sdk
                 throw new ArgumentNullException(nameof(endpoint));
 
             return await SendAsync<EmbeddingEndpoint>(HttpMethod.Put, "/v1.0/endpoints/embedding/" + endpointId, endpoint, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Update only supplied endpoint fields. Dictionary null values explicitly clear credentials.</summary>
+        public async Task<EmbeddingEndpoint> UpdateEmbeddingEndpointAsync(string endpointId, System.Collections.Generic.Dictionary<string, object> patch, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId)) throw new ArgumentNullException(nameof(endpointId));
+            if (patch == null) throw new ArgumentNullException(nameof(patch));
+            return await SendAsync<EmbeddingEndpoint>(HttpMethod.Put, "/v1.0/endpoints/embedding/" + Uri.EscapeDataString(endpointId), patch, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -469,6 +486,15 @@ namespace AssistantHub.Sdk
             return await SendAsync<CompletionEndpoint>(HttpMethod.Get, "/v1.0/endpoints/completion/" + endpointId, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>Admin-only audited reveal of completion endpoint secrets.</summary>
+        public async Task<CompletionEndpoint> RevealCompletionEndpointAsync(string endpointId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+
+            return await SendAsync<CompletionEndpoint>(HttpMethod.Get, "/v1.0/endpoints/completion/" + Uri.EscapeDataString(endpointId) + "/reveal", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Create a new completion endpoint.
         /// </summary>
@@ -498,6 +524,14 @@ namespace AssistantHub.Sdk
                 throw new ArgumentNullException(nameof(endpoint));
 
             return await SendAsync<CompletionEndpoint>(HttpMethod.Put, "/v1.0/endpoints/completion/" + endpointId, endpoint, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Update only supplied endpoint fields. Dictionary null values explicitly clear credentials.</summary>
+        public async Task<CompletionEndpoint> UpdateCompletionEndpointAsync(string endpointId, System.Collections.Generic.Dictionary<string, object> patch, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId)) throw new ArgumentNullException(nameof(endpointId));
+            if (patch == null) throw new ArgumentNullException(nameof(patch));
+            return await SendAsync<CompletionEndpoint>(HttpMethod.Put, "/v1.0/endpoints/completion/" + Uri.EscapeDataString(endpointId), patch, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

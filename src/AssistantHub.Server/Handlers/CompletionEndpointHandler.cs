@@ -82,7 +82,7 @@ namespace AssistantHub.Server.Handlers
                 if (resp.IsSuccessStatusCode)
                 {
                     respBody = ApplyToolMetadataToEndpointJson(respBody);
-                    AssistantHubServer.HealthCheckService?.OnEndpointCreated(respBody);
+                    AssistantHubServer.HealthCheckService?.OnEndpointCreated(respBody, "completion");
                 }
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -177,6 +177,43 @@ namespace AssistantHub.Server.Handlers
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
         }
+        /// <summary>Admin-only audited credential reveal. Never exposed through MCP.</summary>
+        public async Task RevealCompletionEndpointAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                Logging.Info(_Header + "endpoint credential reveal requested by user " + auth.UserId);
+                ctx.Response.Headers.Add("Cache-Control", "no-store");
+                string endpointId = ctx.Request.Url.Parameters["endpointId"];
+
+                HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Get, "/v1.0/endpoints/completion/" + Uri.EscapeDataString(endpointId) + "/reveal").ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (resp.IsSuccessStatusCode)
+                    respBody = ApplyToolMetadataToEndpointJson(respBody);
+
+                ctx.Response.StatusCode = (int)resp.StatusCode;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(respBody).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in RevealCompletionEndpointAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
         /// <summary>
         /// PUT /v1.0/endpoints/completion/{endpointId} - Update completion endpoint by ID.
         /// </summary>
@@ -214,7 +251,7 @@ namespace AssistantHub.Server.Handlers
                 if (resp.IsSuccessStatusCode)
                 {
                     respBody = ApplyToolMetadataToEndpointJson(respBody);
-                    AssistantHubServer.HealthCheckService?.OnEndpointUpdated(respBody);
+                    AssistantHubServer.HealthCheckService?.OnEndpointUpdated(respBody, "completion");
                 }
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;

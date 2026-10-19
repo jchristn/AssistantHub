@@ -14263,9 +14263,57 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Create completion",
-        "operationId": "put_v1_0_endpoints_completion",
+        "summary": "Create completion endpoint",
+        "description": "Global administrators only; other callers receive 403. Creates a completion (inference) endpoint in Partio. The caller's JSON is merged onto an empty object (TenantId defaults to \"default\") and forwarded to Partio PUT /v1.0/endpoints/completion. SupportsToolCalling, ToolCallingApiFormat (OllamaChat, OpenAIChatCompletions, or Native), SupportsParallelToolCalls, and SupportsStreamingToolCalls are stored in Partio as the reserved label 'assistanthub:tool-calling' and reserved tags 'AssistantHub.SupportsToolCalling', 'AssistantHub.ToolCallingApiFormat', 'AssistantHub.SupportsParallelToolCalls', and 'AssistantHub.SupportsStreamingToolCalls'; other labels and tags are preserved. MaxConcurrentRequests (default 2), MaxQueueDepth (default 0), and MaximumTimeoutMs (default 60000) control Partio's per-endpoint concurrency: with MaxQueueDepth 0 requests over the concurrency limit are rejected with 429, while a positive value queues them until a slot frees or the request times out with 504. On success the response is re-serialized with the tool-calling fields read back from the tags, and the endpoint is registered with AssistantHub's health-check service when HealthCheckEnabled and Active are true. The request is forwarded to Partio and Partio's HTTP status code is relayed; non-2xx bodies are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through. ",
+        "operationId": "PUT_v1_0_endpoints_completion",
         "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Completion endpoint definition. ApiFormat accepts Ollama, OllamaCloud, OpenAI, vLLM, Gemini, xAI, AzureOpenAI, Cohere, Bedrock, VertexAI, Anthropic. ProviderSettings carries selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere or VoyageAI settings. Model is required; Endpoint may use provider defaults or derive from the region. Credentials are masked in normal responses; explicit null clears a secret, masked values preserve it, and omitted nested settings are preserved. OllamaCloud is fixed to https://ollama.com. Cloud model pull/delete are unsupported.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartioEndpointRequest"
+              },
+              "example": {
+                "Name": "Ollama Gemma",
+                "Model": "gemma3:4b",
+                "Endpoint": "http://ollama:11434",
+                "ApiFormat": "Ollama",
+                "Active": true,
+                "MaxConcurrentRequests": 2,
+                "MaxQueueDepth": 4,
+                "MaximumTimeoutMs": 120000,
+                "ContextSize": 8192,
+                "SupportsToolCalling": true,
+                "ToolCallingApiFormat": "OllamaChat",
+                "SupportsParallelToolCalls": false,
+                "SupportsStreamingToolCalls": false,
+                "EnableRequestHistory": true,
+                "Labels": [
+                  "production"
+                ],
+                "Tags": {
+                  "owner": "assistant-team"
+                },
+                "HealthCheckEnabled": true,
+                "HealthCheckUrl": "http://ollama:11434/api/tags",
+                "HealthCheckMethod": "GET",
+                "HealthCheckIntervalMs": 30000,
+                "HealthCheckTimeoutMs": 10000,
+                "HealthCheckExpectedStatusCode": 200,
+                "HealthyThreshold": 2,
+                "UnhealthyThreshold": 2,
+                "HealthCheckUseAuth": false
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Endpoint created.",
@@ -14281,6 +14329,7 @@
                   "TenantId": "default",
                   "Endpoint": "http://ollama:11434",
                   "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
                   "Active": true,
                   "MaxConcurrentRequests": 2,
                   "MaxQueueDepth": 4,
@@ -14315,7 +14364,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request. Please check your request and try again.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14330,7 +14379,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14359,11 +14408,8 @@
               }
             }
           },
-          "404": {
-            "description": "Not found"
-          },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14377,55 +14423,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PartioEndpointRequest"
-              },
-              "example": {
-                "Name": "Ollama Gemma",
-                "Model": "gemma3:4b",
-                "Endpoint": "http://ollama:11434",
-                "ApiFormat": "Ollama",
-                "Active": true,
-                "MaxConcurrentRequests": 2,
-                "MaxQueueDepth": 4,
-                "MaximumTimeoutMs": 120000,
-                "ContextSize": 8192,
-                "SupportsToolCalling": true,
-                "ToolCallingApiFormat": "OllamaChat",
-                "SupportsParallelToolCalls": false,
-                "SupportsStreamingToolCalls": false,
-                "EnableRequestHistory": true,
-                "Labels": [
-                  "production"
-                ],
-                "Tags": {
-                  "owner": "assistant-team"
-                },
-                "HealthCheckEnabled": true,
-                "HealthCheckUrl": "http://ollama:11434/api/tags",
-                "HealthCheckMethod": "GET",
-                "HealthCheckIntervalMs": 30000,
-                "HealthCheckTimeoutMs": 10000,
-                "HealthCheckExpectedStatusCode": 200,
-                "HealthyThreshold": 2,
-                "UnhealthyThreshold": 2,
-                "HealthCheckUseAuth": false
-              }
-            }
-          },
-          "description": "Completion endpoint definition. Model, Endpoint, and ApiFormat are required by Partio."
-        },
-        "description": "Global administrators only; other callers receive 403. Creates a completion (inference) endpoint in Partio. The caller's JSON is merged onto an empty object (TenantId defaults to \"default\") and forwarded to Partio PUT /v1.0/endpoints/completion. SupportsToolCalling, ToolCallingApiFormat (OllamaChat or OpenAIChatCompletions), SupportsParallelToolCalls, and SupportsStreamingToolCalls are stored in Partio as the reserved label 'assistanthub:tool-calling' and reserved tags 'AssistantHub.SupportsToolCalling', 'AssistantHub.ToolCallingApiFormat', 'AssistantHub.SupportsParallelToolCalls', and 'AssistantHub.SupportsStreamingToolCalls'; other labels and tags are preserved. MaxConcurrentRequests (default 2), MaxQueueDepth (default 0), and MaximumTimeoutMs (default 60000) control Partio's per-endpoint concurrency: with MaxQueueDepth 0 requests over the concurrency limit are rejected with 429, while a positive value queues them until a slot frees or the request times out with 504. On success the response is re-serialized with the tool-calling fields read back from the tags, and the endpoint is registered with AssistantHub's health-check service when HealthCheckEnabled and Active are true. The request is forwarded to Partio and Partio's HTTP status code is relayed; non-2xx bodies are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through. "
+        }
       }
     },
     "/v1.0/endpoints/completion/{endpointId}": {
@@ -14433,8 +14431,9 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Get endpointId",
-        "operationId": "get_v1_0_endpoints_completion_endpointid",
+        "summary": "Get completion endpoint",
+        "description": "Global administrators only; other callers receive 403. Returns one completion endpoint from Partio GET /v1.0/endpoints/completion/{endpointId}, re-serialized with the tool-calling fields read back from its tags. The request is forwarded to Partio and Partio's HTTP status code is relayed; non-2xx bodies are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through. ",
+        "operationId": "GET_v1_0_endpoints_completion_endpointId",
         "parameters": [
           {
             "name": "endpointId",
@@ -14445,144 +14444,14 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartioEndpointConfig"
-                },
-                "example": {
-                  "Id": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
-                  "Name": "Ollama Gemma",
-                  "Model": "gemma3:4b",
-                  "TenantId": "default",
-                  "Endpoint": "http://ollama:11434",
-                  "ApiFormat": "Ollama",
-                  "Active": true,
-                  "MaxConcurrentRequests": 2,
-                  "MaxQueueDepth": 4,
-                  "MaximumTimeoutMs": 120000,
-                  "ContextSize": 8192,
-                  "SupportsToolCalling": true,
-                  "ToolCallingApiFormat": "OllamaChat",
-                  "SupportsParallelToolCalls": false,
-                  "SupportsStreamingToolCalls": false,
-                  "Labels": [
-                    "production",
-                    "assistanthub:tool-calling"
-                  ],
-                  "Tags": {
-                    "owner": "assistant-team",
-                    "AssistantHub.SupportsToolCalling": "true",
-                    "AssistantHub.ToolCallingApiFormat": "OllamaChat",
-                    "AssistantHub.SupportsParallelToolCalls": "false",
-                    "AssistantHub.SupportsStreamingToolCalls": "false"
-                  },
-                  "HealthCheckEnabled": true,
-                  "HealthCheckUrl": "http://ollama:11434/api/tags",
-                  "HealthCheckMethod": "GET",
-                  "HealthCheckIntervalMs": 30000,
-                  "HealthCheckTimeoutMs": 10000,
-                  "HealthCheckExpectedStatusCode": 200,
-                  "HealthyThreshold": 2,
-                  "UnhealthyThreshold": 2,
-                  "HealthCheckUseAuth": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthenticationFailed",
-                  "Message": "Authentication failed. Please check your credentials.",
-                  "StatusCode": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Authorization failed. You do not have permission to perform this action.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthorizationFailed",
-                  "Message": "Authorization failed. You do not have permission to perform this action.",
-                  "StatusCode": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "NotFound",
-                  "Message": "The requested resource was not found.",
-                  "StatusCode": 404
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "InternalError",
-                  "Message": "An internal error occurred. Please try again later.",
-                  "StatusCode": 500
-                }
-              }
-            }
-          }
-        },
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "description": "Global administrators only; other callers receive 403. Returns one completion endpoint from Partio GET /v1.0/endpoints/completion/{endpointId}, re-serialized with the tool-calling fields read back from its tags. The request is forwarded to Partio and Partio's HTTP status code is relayed; non-2xx bodies are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through. "
-      },
-      "put": {
-        "tags": [
-          "Completion Endpoints"
-        ],
-        "summary": "Update endpointId",
-        "operationId": "put_v1_0_endpoints_completion_endpointid",
-        "parameters": [
-          {
-            "name": "endpointId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Completion endpoint.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14595,6 +14464,7 @@
                   "TenantId": "default",
                   "Endpoint": "http://ollama:11434",
                   "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
                   "Active": true,
                   "MaxConcurrentRequests": 2,
                   "MaxQueueDepth": 4,
@@ -14628,23 +14498,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "BadRequest",
-                  "Message": "Bad request. Please check your request and try again.",
-                  "StatusCode": 400
-                }
-              }
-            }
-          },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14674,7 +14529,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14689,7 +14544,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14703,7 +14558,25 @@
               }
             }
           }
-        },
+        }
+      },
+      "put": {
+        "tags": [
+          "Completion Endpoints"
+        ],
+        "summary": "Update completion endpoint",
+        "description": "Global administrators only; other callers receive 403. Partially updates a completion endpoint. AssistantHub reads the current endpoint from Partio and overlays only the fields supplied by the caller, preserving fields it does not manage. Labels and Tags are unioned with the existing values (caller wins on tag conflicts), and a blank ApiKey keeps the stored key. Tool-calling fields are rewritten into the reserved label and tags only when the caller supplies at least one of them. The merged object is sent to Partio PUT /v1.0/endpoints/completion/{endpointId}; on success the response is re-serialized with tool-calling fields and the health-check service is updated. The request is forwarded to Partio and Partio's HTTP status code is relayed; non-2xx bodies are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through. ",
+        "operationId": "PUT_v1_0_endpoints_completion_endpointId",
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -14711,6 +14584,7 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "Fields to change; omitted fields keep their current values.",
           "content": {
             "application/json": {
               "schema": {
@@ -14748,36 +14622,74 @@
                 "HealthCheckUseAuth": false
               }
             }
-          },
-          "description": "Fields to change; omitted fields keep their current values."
-        },
-        "description": "Global administrators only; other callers receive 403. Partially updates a completion endpoint. AssistantHub reads the current endpoint from Partio and overlays only the fields supplied by the caller, preserving fields it does not manage. Labels and Tags are unioned with the existing values (caller wins on tag conflicts), and a blank ApiKey keeps the stored key. Tool-calling fields are rewritten into the reserved label and tags only when the caller supplies at least one of them. The merged object is sent to Partio PUT /v1.0/endpoints/completion/{endpointId}; on success the response is re-serialized with tool-calling fields and the health-check service is updated. The request is forwarded to Partio and Partio's HTTP status code is relayed; non-2xx bodies are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through. "
-      },
-      "delete": {
-        "tags": [
-          "Completion Endpoints"
-        ],
-        "summary": "Delete endpointId",
-        "operationId": "delete_v1_0_endpoints_completion_endpointid",
-        "parameters": [
-          {
-            "name": "endpointId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
-        ],
+        },
         "responses": {
-          "204": {
-            "description": "Endpoint deleted."
+          "200": {
+            "description": "Updated completion endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartioEndpointConfig"
+                },
+                "example": {
+                  "Id": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
+                  "Name": "Ollama Gemma",
+                  "Model": "gemma3:4b",
+                  "TenantId": "default",
+                  "Endpoint": "http://ollama:11434",
+                  "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
+                  "Active": true,
+                  "MaxConcurrentRequests": 2,
+                  "MaxQueueDepth": 4,
+                  "MaximumTimeoutMs": 120000,
+                  "ContextSize": 8192,
+                  "SupportsToolCalling": true,
+                  "ToolCallingApiFormat": "OllamaChat",
+                  "SupportsParallelToolCalls": false,
+                  "SupportsStreamingToolCalls": false,
+                  "Labels": [
+                    "production",
+                    "assistanthub:tool-calling"
+                  ],
+                  "Tags": {
+                    "owner": "assistant-team",
+                    "AssistantHub.SupportsToolCalling": "true",
+                    "AssistantHub.ToolCallingApiFormat": "OllamaChat",
+                    "AssistantHub.SupportsParallelToolCalls": "false",
+                    "AssistantHub.SupportsStreamingToolCalls": "false"
+                  },
+                  "HealthCheckEnabled": true,
+                  "HealthCheckUrl": "http://ollama:11434/api/tags",
+                  "HealthCheckMethod": "GET",
+                  "HealthCheckIntervalMs": 30000,
+                  "HealthCheckTimeoutMs": 10000,
+                  "HealthCheckExpectedStatusCode": 200,
+                  "HealthyThreshold": 2,
+                  "UnhealthyThreshold": 2,
+                  "HealthCheckUseAuth": false
+                }
+              }
+            }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14807,7 +14719,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14822,7 +14734,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14836,20 +14748,15 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Deletes a completion endpoint in Partio and stops its health checks. Partio's status code is relayed; a 204 has no body, any other status relays Partio's JSON body."
+        }
       },
-      "head": {
+      "delete": {
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Check endpointId existence",
-        "operationId": "head_v1_0_endpoints_completion_endpointid",
+        "summary": "Delete completion endpoint",
+        "description": "Global administrators only; other callers receive 403. Deletes a completion endpoint in Partio and stops its health checks. Partio's status code is relayed; a 204 has no body, any other status relays Partio's JSON body.",
+        "operationId": "DELETE_v1_0_endpoints_completion_endpointId",
         "parameters": [
           {
             "name": "endpointId",
@@ -14860,32 +14767,116 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Authorization failed."
-          },
-          "404": {
-            "description": "Not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "description": "Global administrators only; other callers receive 403. Relays Partio's HEAD status: 200 when the endpoint exists, 404 otherwise. No response body."
+        "responses": {
+          "204": {
+            "description": "Endpoint deleted."
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "Completion Endpoints"
+        ],
+        "summary": "Check completion endpoint existence",
+        "description": "Global administrators only; other callers receive 403. Relays Partio's HEAD status: 200 when the endpoint exists, 404 otherwise. No response body.",
+        "operationId": "HEAD_v1_0_endpoints_completion_endpointId",
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint exists."
+          },
+          "403": {
+            "description": "Authorization failed."
+          },
+          "404": {
+            "description": "Endpoint not found."
+          },
+          "500": {
+            "description": "Internal error."
+          },
+          "401": {
+            "description": "Authentication failed."
+          }
+        }
       }
     },
     "/v1.0/endpoints/completion/{endpointId}/health": {
@@ -14893,8 +14884,9 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Get endpoint health",
-        "operationId": "get_v1_0_endpoints_completion_endpointid_health",
+        "summary": "Get completion endpoint health",
+        "description": "Global administrators only; other callers receive 403. Returns health status for one endpoint from AssistantHub's local health-check service (provider-aware checks are delegated to Partio when needed), including uptime percentage and the last 24 hours of check history. Returns 404 when the endpoint is not being monitored (it does not exist, is inactive, or has HealthCheckEnabled false).",
+        "operationId": "GET_v1_0_endpoints_completion_endpointId_health",
         "parameters": [
           {
             "name": "endpointId",
@@ -14905,9 +14897,14 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Endpoint health status.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14942,11 +14939,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14976,7 +14970,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14991,7 +14985,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15005,13 +14999,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Returns health status for one endpoint from AssistantHub's local health-check service (Partio is not called), including uptime percentage and the last 24 hours of check history. Returns 404 when the endpoint is not being monitored (it does not exist, is inactive, or has HealthCheckEnabled false)."
+        }
       }
     },
     "/v1.0/endpoints/completion/{endpointId}/load": {
@@ -15019,8 +15007,9 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Load endpoint model",
-        "operationId": "post_v1_0_endpoints_completion_endpointid_load",
+        "summary": "Load completion endpoint model",
+        "description": "Global administrators only; other callers receive 403. Loads or warms the endpoint's model through Partio POST /v1.0/endpoints/completion/{endpointId}/load. The body is forwarded unchanged (an empty body is sent as {}). Partio's status code and model-load result are relayed unchanged; failures use the same response shape with Success false. The X-Partio-Endpoint-Id, X-Model, and X-Partio-Model response headers are copied from Partio when present.",
+        "operationId": "POST_v1_0_endpoints_completion_endpointId_load",
         "parameters": [
           {
             "name": "endpointId",
@@ -15031,9 +15020,59 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Model-load options. Optional; every field has a Partio default. Strategy is Auto, NativeProviderLoad, or WarmRequest.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Strategy": {
+                    "type": "string"
+                  },
+                  "TimeoutMs": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "KeepAlive": {
+                    "type": "string"
+                  },
+                  "SampleInput": {
+                    "type": "string"
+                  },
+                  "MaxTokens": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "RecordRequestHistory": {
+                    "type": "boolean"
+                  },
+                  "RequireNativeLoad": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "example": {
+                "Strategy": "Auto",
+                "TimeoutMs": 60000,
+                "KeepAlive": "30m",
+                "SampleInput": "Partio model load probe",
+                "MaxTokens": 1,
+                "RecordRequestHistory": true,
+                "RequireNativeLoad": false
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Model loaded or warmed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15120,7 +15159,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request. Please check your request and try again.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15135,7 +15174,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15165,7 +15204,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15211,7 +15250,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15257,58 +15296,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "Strategy": {
-                    "type": "string"
-                  },
-                  "TimeoutMs": {
-                    "type": "integer",
-                    "format": "int32"
-                  },
-                  "KeepAlive": {
-                    "type": "string"
-                  },
-                  "SampleInput": {
-                    "type": "string"
-                  },
-                  "MaxTokens": {
-                    "type": "integer",
-                    "format": "int32"
-                  },
-                  "RecordRequestHistory": {
-                    "type": "boolean"
-                  },
-                  "RequireNativeLoad": {
-                    "type": "boolean"
-                  }
-                }
-              },
-              "example": {
-                "Strategy": "Auto",
-                "TimeoutMs": 60000,
-                "KeepAlive": "30m",
-                "SampleInput": "Partio model load probe",
-                "MaxTokens": 1,
-                "RecordRequestHistory": true,
-                "RequireNativeLoad": false
-              }
-            }
-          },
-          "description": "Model-load options. Optional; every field has a Partio default. Strategy is Auto, NativeProviderLoad, or WarmRequest."
-        },
-        "description": "Global administrators only; other callers receive 403. Loads or warms the endpoint's model through Partio POST /v1.0/endpoints/completion/{endpointId}/load. The body is forwarded unchanged (an empty body is sent as {}). Partio's status code and model-load result are relayed unchanged; failures use the same response shape with Success false. The X-Partio-Endpoint-Id, X-Model, and X-Partio-Model response headers are copied from Partio when present."
+        }
       }
     },
     "/v1.0/endpoints/completion/{endpointId}/test": {
@@ -15316,8 +15304,9 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Test endpoint",
-        "operationId": "post_v1_0_endpoints_completion_endpointid_test",
+        "summary": "Test completion endpoint",
+        "description": "Global administrators only; other callers receive 403. Runs a smoke test by sending the prompt to Partio POST /v1.0/completion with this endpoint. The endpointId in the path overrides any EndpointId in the body; property names are case-sensitive. Partio's status code and response body are relayed unchanged; on failure the same shape is returned with Success false and Error set. Partio requires a non-empty Prompt.",
+        "operationId": "POST_v1_0_endpoints_completion_endpointId_test",
         "parameters": [
           {
             "name": "endpointId",
@@ -15328,9 +15317,32 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Test prompt. MaxTokens defaults to 512 and TimeoutMs to 60000.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndpointExplorerCompletionRequest"
+              },
+              "example": {
+                "EndpointId": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
+                "Prompt": "Respond with a one-sentence smoke test confirmation.",
+                "SystemPrompt": "You are a concise and accurate assistant.",
+                "MaxTokens": 512,
+                "TimeoutMs": 60000
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Completion test result.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15361,7 +15373,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request. Please check your request and try again.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15376,7 +15388,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15406,7 +15418,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15437,7 +15449,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15483,31 +15495,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EndpointExplorerCompletionRequest"
-              },
-              "example": {
-                "EndpointId": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
-                "Prompt": "Respond with a one-sentence smoke test confirmation.",
-                "SystemPrompt": "You are a concise and accurate assistant.",
-                "MaxTokens": 512,
-                "TimeoutMs": 60000
-              }
-            }
-          },
-          "description": "Test prompt. MaxTokens defaults to 512 and TimeoutMs to 60000."
-        },
-        "description": "Global administrators only; other callers receive 403. Runs a smoke test by sending the prompt to Partio POST /v1.0/completion with this endpoint. The endpointId in the path overrides any EndpointId in the body; property names are case-sensitive. Partio's status code and response body are relayed unchanged; on failure the same shape is returned with Success false and Error set. Partio requires a non-empty Prompt."
+        }
       }
     },
     "/v1.0/endpoints/completion/enumerate": {
@@ -15515,131 +15503,10 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Enumerate resources",
-        "operationId": "post_v1_0_endpoints_completion_enumerate",
+        "summary": "List completion endpoints",
+        "description": "Global administrators only; other callers receive 403. Forwards the request body unchanged to Partio POST /v1.0/endpoints/completion/enumerate and converts Partio's { Data, TotalCount, HasMore } envelope into the standard AssistantHub enumeration result, with tool-calling fields read back from each endpoint's tags. On a non-2xx Partio response, Partio's status code and body are relayed unchanged.",
+        "operationId": "POST_v1_0_endpoints_completion_enumerate",
         "parameters": [],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnumerationResultOfPartioEndpointConfig"
-                },
-                "example": {
-                  "Success": true,
-                  "MaxResults": 1,
-                  "TotalRecords": 1,
-                  "RecordsRemaining": 0,
-                  "EndOfResults": true,
-                  "TotalMs": 0,
-                  "Objects": [
-                    {
-                      "Id": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
-                      "Name": "Ollama Gemma",
-                      "Model": "gemma3:4b",
-                      "TenantId": "default",
-                      "Endpoint": "http://ollama:11434",
-                      "ApiFormat": "Ollama",
-                      "Active": true,
-                      "MaxConcurrentRequests": 2,
-                      "MaxQueueDepth": 4,
-                      "MaximumTimeoutMs": 120000,
-                      "ContextSize": 8192,
-                      "SupportsToolCalling": true,
-                      "ToolCallingApiFormat": "OllamaChat",
-                      "SupportsParallelToolCalls": false,
-                      "SupportsStreamingToolCalls": false,
-                      "Labels": [
-                        "production",
-                        "assistanthub:tool-calling"
-                      ],
-                      "Tags": {
-                        "owner": "assistant-team",
-                        "AssistantHub.SupportsToolCalling": "true",
-                        "AssistantHub.ToolCallingApiFormat": "OllamaChat",
-                        "AssistantHub.SupportsParallelToolCalls": "false",
-                        "AssistantHub.SupportsStreamingToolCalls": "false"
-                      },
-                      "HealthCheckEnabled": true,
-                      "HealthCheckUrl": "http://ollama:11434/api/tags",
-                      "HealthCheckMethod": "GET",
-                      "HealthCheckIntervalMs": 30000,
-                      "HealthCheckTimeoutMs": 10000,
-                      "HealthCheckExpectedStatusCode": 200,
-                      "HealthyThreshold": 2,
-                      "UnhealthyThreshold": 2,
-                      "HealthCheckUseAuth": false
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "BadRequest",
-                  "Message": "Bad request. Please check your request and try again.",
-                  "StatusCode": 400
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthenticationFailed",
-                  "Message": "Authentication failed. Please check your credentials.",
-                  "StatusCode": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Authorization failed. You do not have permission to perform this action.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthorizationFailed",
-                  "Message": "Authorization failed. You do not have permission to perform this action.",
-                  "StatusCode": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found"
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "InternalError",
-                  "Message": "An internal error occurred. Please try again later.",
-                  "StatusCode": 500
-                }
-              }
-            }
-          }
-        },
         "security": [
           {
             "BearerAuth": []
@@ -15647,6 +15514,7 @@
         ],
         "requestBody": {
           "required": false,
+          "description": "Partio enumeration request. Optional; an empty body lists endpoints with Partio's defaults. Order is CreatedAscending, CreatedDescending, NameAscending, or NameDescending.",
           "content": {
             "application/json": {
               "schema": {
@@ -15687,10 +15555,128 @@
                 "ActiveFilter": true
               }
             }
-          },
-          "description": "Partio enumeration request. Optional; an empty body lists endpoints with Partio's defaults. Order is CreatedAscending, CreatedDescending, NameAscending, or NameDescending."
+          }
         },
-        "description": "Global administrators only; other callers receive 403. Forwards the request body unchanged to Partio POST /v1.0/endpoints/completion/enumerate and converts Partio's { Data, TotalCount, HasMore } envelope into the standard AssistantHub enumeration result, with tool-calling fields read back from each endpoint's tags. On a non-2xx Partio response, Partio's status code and body are relayed unchanged."
+        "responses": {
+          "200": {
+            "description": "Page of completion endpoints.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnumerationResultOfPartioEndpointConfig"
+                },
+                "example": {
+                  "Success": true,
+                  "MaxResults": 1,
+                  "TotalRecords": 1,
+                  "RecordsRemaining": 0,
+                  "EndOfResults": true,
+                  "TotalMs": 0,
+                  "Objects": [
+                    {
+                      "Id": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
+                      "Name": "Ollama Gemma",
+                      "Model": "gemma3:4b",
+                      "TenantId": "default",
+                      "Endpoint": "http://ollama:11434",
+                      "ApiFormat": "Ollama",
+                      "EnableRequestHistory": false,
+                      "Active": true,
+                      "MaxConcurrentRequests": 2,
+                      "MaxQueueDepth": 4,
+                      "MaximumTimeoutMs": 120000,
+                      "ContextSize": 8192,
+                      "SupportsToolCalling": true,
+                      "ToolCallingApiFormat": "OllamaChat",
+                      "SupportsParallelToolCalls": false,
+                      "SupportsStreamingToolCalls": false,
+                      "Labels": [
+                        "production",
+                        "assistanthub:tool-calling"
+                      ],
+                      "Tags": {
+                        "owner": "assistant-team",
+                        "AssistantHub.SupportsToolCalling": "true",
+                        "AssistantHub.ToolCallingApiFormat": "OllamaChat",
+                        "AssistantHub.SupportsParallelToolCalls": "false",
+                        "AssistantHub.SupportsStreamingToolCalls": "false"
+                      },
+                      "HealthCheckEnabled": true,
+                      "HealthCheckUrl": "http://ollama:11434/api/tags",
+                      "HealthCheckMethod": "GET",
+                      "HealthCheckIntervalMs": 30000,
+                      "HealthCheckTimeoutMs": 10000,
+                      "HealthCheckExpectedStatusCode": 200,
+                      "HealthyThreshold": 2,
+                      "UnhealthyThreshold": 2,
+                      "HealthCheckUseAuth": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1.0/endpoints/completion/health": {
@@ -15698,12 +15684,18 @@
         "tags": [
           "Completion Endpoints"
         ],
-        "summary": "Get endpoint health",
-        "operationId": "get_v1_0_endpoints_completion_health",
+        "summary": "List completion endpoint health",
+        "description": "Global administrators only; other callers receive 403. Returns health status from AssistantHub's local health-check service (provider-aware checks are delegated to Partio when needed) for every monitored endpoint. Only active endpoints with HealthCheckEnabled are monitored. The list is not filtered by endpoint type, so monitored embedding endpoints are included as well. Returns an empty array when nothing is monitored.",
+        "operationId": "GET_v1_0_endpoints_completion_health",
         "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Health status of all monitored endpoints.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15743,171 +15735,6 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthenticationFailed",
-                  "Message": "Authentication failed. Please check your credentials.",
-                  "StatusCode": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Authorization failed. You do not have permission to perform this action.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthorizationFailed",
-                  "Message": "Authorization failed. You do not have permission to perform this action.",
-                  "StatusCode": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found"
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "InternalError",
-                  "Message": "An internal error occurred. Please try again later.",
-                  "StatusCode": 500
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Returns health status from AssistantHub's local health-check service (Partio is not called) for every monitored endpoint. Only active endpoints with HealthCheckEnabled are monitored. The list is not filtered by endpoint type, so monitored embedding endpoints are included as well. Returns an empty array when nothing is monitored."
-      }
-    },
-    "/v1.0/endpoints/embedding": {
-      "put": {
-        "tags": [
-          "Embedding Endpoints"
-        ],
-        "summary": "Create an embedding endpoint",
-        "description": "Proxy to Partio. Create a new embedding endpoint. Requires admin access.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmbeddingEndpoint"
-              },
-              "example": {
-                "Name": "Ollama Embeddings",
-                "Model": "all-minilm",
-                "Endpoint": "http://ollama:11434",
-                "ApiFormat": "Ollama",
-                "Active": true,
-                "MaxConcurrentRequests": 2,
-                "MaxQueueDepth": 0,
-                "MaximumTimeoutMs": 60000,
-                "SupportsToolCalling": false,
-                "SupportsParallelToolCalls": false,
-                "SupportsStreamingToolCalls": false,
-                "EnableRequestHistory": true,
-                "Labels": [
-                  "production"
-                ],
-                "Tags": {
-                  "owner": "platform-team"
-                },
-                "HealthCheckEnabled": true,
-                "HealthCheckUrl": "http://ollama:11434/api/tags",
-                "HealthCheckMethod": "GET",
-                "HealthCheckIntervalMs": 30000,
-                "HealthCheckTimeoutMs": 10000,
-                "HealthCheckExpectedStatusCode": 200,
-                "HealthyThreshold": 2,
-                "UnhealthyThreshold": 2,
-                "HealthCheckUseAuth": false
-              }
-            }
-          },
-          "description": "Embedding endpoint definition. Model, Endpoint, and ApiFormat are required by Partio."
-        },
-        "responses": {
-          "201": {
-            "description": "Endpoint created (Partio's response, relayed unchanged).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartioEndpointConfig"
-                },
-                "example": {
-                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
-                  "Name": "Ollama Embeddings",
-                  "Model": "all-minilm",
-                  "TenantId": "default",
-                  "Endpoint": "http://ollama:11434",
-                  "ApiFormat": "Ollama",
-                  "Active": true,
-                  "MaxConcurrentRequests": 2,
-                  "MaxQueueDepth": 0,
-                  "MaximumTimeoutMs": 60000,
-                  "ContextSize": 0,
-                  "SupportsToolCalling": false,
-                  "SupportsParallelToolCalls": false,
-                  "SupportsStreamingToolCalls": false,
-                  "Labels": [
-                    "production"
-                  ],
-                  "Tags": {
-                    "owner": "platform-team"
-                  },
-                  "HealthCheckEnabled": true,
-                  "HealthCheckUrl": "http://ollama:11434/api/tags",
-                  "HealthCheckMethod": "GET",
-                  "HealthCheckIntervalMs": 30000,
-                  "HealthCheckTimeoutMs": 10000,
-                  "HealthCheckExpectedStatusCode": 200,
-                  "HealthyThreshold": 2,
-                  "UnhealthyThreshold": 2,
-                  "HealthCheckUseAuth": false
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "BadRequest",
-                  "Message": "Bad request. Please check your request and try again.",
-                  "StatusCode": 400
-                }
-              }
-            },
-            "description": "Bad request. Please check your request and try again."
-          },
           "401": {
             "description": "Authentication failed. Please check your credentials.",
             "content": {
@@ -15924,7 +15751,7 @@
             }
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden",
+            "description": "Authorization failed. You do not have permission to perform this action.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15936,11 +15763,7 @@
                   "StatusCode": 403
                 }
               }
-            },
-            "description": "Authorization failed. You do not have permission to perform this action."
-          },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+            }
           },
           "500": {
             "description": "An internal error occurred. Please try again later.",
@@ -15957,280 +15780,18 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [],
-        "operationId": "put_v1_0_endpoints_embedding"
+        }
       }
     },
-    "/v1.0/endpoints/embedding/{endpointId}": {
-      "get": {
-        "tags": [
-          "Embedding Endpoints"
-        ],
-        "summary": "Get endpointId",
-        "operationId": "get_v1_0_endpoints_embedding_endpointid",
-        "parameters": [
-          {
-            "name": "endpointId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartioEndpointConfig"
-                },
-                "example": {
-                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
-                  "Name": "Ollama Embeddings",
-                  "Model": "all-minilm",
-                  "TenantId": "default",
-                  "Endpoint": "http://ollama:11434",
-                  "ApiFormat": "Ollama",
-                  "Active": true,
-                  "MaxConcurrentRequests": 2,
-                  "MaxQueueDepth": 0,
-                  "MaximumTimeoutMs": 60000,
-                  "ContextSize": 0,
-                  "SupportsToolCalling": false,
-                  "SupportsParallelToolCalls": false,
-                  "SupportsStreamingToolCalls": false,
-                  "Labels": [
-                    "production"
-                  ],
-                  "Tags": {
-                    "owner": "platform-team"
-                  },
-                  "HealthCheckEnabled": true,
-                  "HealthCheckUrl": "http://ollama:11434/api/tags",
-                  "HealthCheckMethod": "GET",
-                  "HealthCheckIntervalMs": 30000,
-                  "HealthCheckTimeoutMs": 10000,
-                  "HealthCheckExpectedStatusCode": 200,
-                  "HealthyThreshold": 2,
-                  "UnhealthyThreshold": 2,
-                  "HealthCheckUseAuth": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthenticationFailed",
-                  "Message": "Authentication failed. Please check your credentials.",
-                  "StatusCode": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Authorization failed. You do not have permission to perform this action.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthorizationFailed",
-                  "Message": "Authorization failed. You do not have permission to perform this action.",
-                  "StatusCode": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "NotFound",
-                  "Message": "The requested resource was not found.",
-                  "StatusCode": 404
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "InternalError",
-                  "Message": "An internal error occurred. Please try again later.",
-                  "StatusCode": 500
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Returns one embedding endpoint from Partio GET /v1.0/endpoints/embedding/{endpointId}. The request is forwarded to Partio and Partio's HTTP status code and JSON body are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through; Partio's endpoint object also carries EnableRequestHistory, Tokenization, CreatedUtc, and LastUpdateUtc. "
-      },
+    "/v1.0/endpoints/embedding": {
       "put": {
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Update endpointId",
-        "operationId": "put_v1_0_endpoints_embedding_endpointid",
-        "parameters": [
-          {
-            "name": "endpointId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartioEndpointConfig"
-                },
-                "example": {
-                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
-                  "Name": "Ollama Embeddings",
-                  "Model": "all-minilm",
-                  "TenantId": "default",
-                  "Endpoint": "http://ollama:11434",
-                  "ApiFormat": "Ollama",
-                  "Active": true,
-                  "MaxConcurrentRequests": 2,
-                  "MaxQueueDepth": 0,
-                  "MaximumTimeoutMs": 60000,
-                  "ContextSize": 0,
-                  "SupportsToolCalling": false,
-                  "SupportsParallelToolCalls": false,
-                  "SupportsStreamingToolCalls": false,
-                  "Labels": [
-                    "production"
-                  ],
-                  "Tags": {
-                    "owner": "platform-team"
-                  },
-                  "HealthCheckEnabled": true,
-                  "HealthCheckUrl": "http://ollama:11434/api/tags",
-                  "HealthCheckMethod": "GET",
-                  "HealthCheckIntervalMs": 30000,
-                  "HealthCheckTimeoutMs": 10000,
-                  "HealthCheckExpectedStatusCode": 200,
-                  "HealthyThreshold": 2,
-                  "UnhealthyThreshold": 2,
-                  "HealthCheckUseAuth": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "BadRequest",
-                  "Message": "Bad request. Please check your request and try again.",
-                  "StatusCode": 400
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthenticationFailed",
-                  "Message": "Authentication failed. Please check your credentials.",
-                  "StatusCode": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Authorization failed. You do not have permission to perform this action.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthorizationFailed",
-                  "Message": "Authorization failed. You do not have permission to perform this action.",
-                  "StatusCode": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "NotFound",
-                  "Message": "The requested resource was not found.",
-                  "StatusCode": 404
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "InternalError",
-                  "Message": "An internal error occurred. Please try again later.",
-                  "StatusCode": 500
-                }
-              }
-            }
-          }
-        },
+        "summary": "Create embedding endpoint",
+        "description": "Global administrators only; other callers receive 403. Creates an embedding endpoint in Partio. The caller's JSON is merged onto an empty object (TenantId defaults to \"default\"; Labels and Tags are normalized) and forwarded to Partio PUT /v1.0/endpoints/embedding. MaxConcurrentRequests (default 2), MaxQueueDepth (default 0), and MaximumTimeoutMs (default 60000) control Partio's per-endpoint concurrency: with MaxQueueDepth 0 requests over the concurrency limit are rejected with 429, while a positive value queues them until a slot frees or the request times out with 504. On success the endpoint is registered with AssistantHub's health-check service when HealthCheckEnabled and Active are true. The request is forwarded to Partio and Partio's HTTP status code and JSON body are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through; Partio's endpoint object also carries EnableRequestHistory, Tokenization, CreatedUtc, and LastUpdateUtc. ",
+        "operationId": "PUT_v1_0_endpoints_embedding",
+        "parameters": [],
         "security": [
           {
             "BearerAuth": []
@@ -16238,6 +15799,7 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "Embedding endpoint definition. ApiFormat accepts Ollama, OllamaCloud, OpenAI, vLLM, Gemini, xAI, AzureOpenAI, Cohere, Bedrock, VertexAI, TEI, VoyageAI. ProviderSettings carries selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere or VoyageAI settings. Model is required; Endpoint may use provider defaults or derive from the region. Credentials are masked in normal responses; explicit null clears a secret, masked values preserve it, and omitted nested settings are preserved. OllamaCloud is fixed to https://ollama.com. Cloud model pull/delete are unsupported.",
           "content": {
             "application/json": {
               "schema": {
@@ -16273,17 +15835,122 @@
                 "HealthCheckUseAuth": false
               }
             }
-          },
-          "description": "Fields to change; omitted fields keep their current values."
+          }
         },
-        "description": "Global administrators only; other callers receive 403. Partially updates an embedding endpoint. AssistantHub reads the current endpoint from Partio and overlays only the fields supplied by the caller, preserving fields it does not manage (health-check configuration, context size, other services' labels and tags). Labels and Tags are unioned with the existing values (caller wins on tag conflicts), and a blank ApiKey keeps the stored key. The merged object is sent to Partio PUT /v1.0/endpoints/embedding/{endpointId}; on success the health-check service is updated. The request is forwarded to Partio and Partio's HTTP status code and JSON body are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through; Partio's endpoint object also carries EnableRequestHistory, Tokenization, CreatedUtc, and LastUpdateUtc. "
-      },
-      "delete": {
+        "responses": {
+          "201": {
+            "description": "Endpoint created (Partio's response, relayed unchanged).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartioEndpointConfig"
+                },
+                "example": {
+                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
+                  "Name": "Ollama Embeddings",
+                  "Model": "all-minilm",
+                  "TenantId": "default",
+                  "Endpoint": "http://ollama:11434",
+                  "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
+                  "Active": true,
+                  "MaxConcurrentRequests": 2,
+                  "MaxQueueDepth": 0,
+                  "MaximumTimeoutMs": 60000,
+                  "ContextSize": 0,
+                  "SupportsToolCalling": false,
+                  "SupportsParallelToolCalls": false,
+                  "SupportsStreamingToolCalls": false,
+                  "Labels": [
+                    "production"
+                  ],
+                  "Tags": {
+                    "owner": "platform-team"
+                  },
+                  "HealthCheckEnabled": true,
+                  "HealthCheckUrl": "http://ollama:11434/api/tags",
+                  "HealthCheckMethod": "GET",
+                  "HealthCheckIntervalMs": 30000,
+                  "HealthCheckTimeoutMs": 10000,
+                  "HealthCheckExpectedStatusCode": 200,
+                  "HealthyThreshold": 2,
+                  "UnhealthyThreshold": 2,
+                  "HealthCheckUseAuth": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/endpoints/embedding/{endpointId}": {
+      "get": {
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Delete endpointId",
-        "operationId": "delete_v1_0_endpoints_embedding_endpointid",
+        "summary": "Get embedding endpoint",
+        "description": "Global administrators only; other callers receive 403. Returns one embedding endpoint from Partio GET /v1.0/endpoints/embedding/{endpointId}. The request is forwarded to Partio and Partio's HTTP status code and JSON body are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through; Partio's endpoint object also carries EnableRequestHistory, Tokenization, CreatedUtc, and LastUpdateUtc. ",
+        "operationId": "GET_v1_0_endpoints_embedding_endpointId",
         "parameters": [
           {
             "name": "endpointId",
@@ -16294,15 +15961,56 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
-          "204": {
-            "description": "Endpoint deleted."
-          },
-          "400": {
-            "description": "Bad request"
+          "200": {
+            "description": "Embedding endpoint (Partio's response, relayed unchanged).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartioEndpointConfig"
+                },
+                "example": {
+                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
+                  "Name": "Ollama Embeddings",
+                  "Model": "all-minilm",
+                  "TenantId": "default",
+                  "Endpoint": "http://ollama:11434",
+                  "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
+                  "Active": true,
+                  "MaxConcurrentRequests": 2,
+                  "MaxQueueDepth": 0,
+                  "MaximumTimeoutMs": 60000,
+                  "ContextSize": 0,
+                  "SupportsToolCalling": false,
+                  "SupportsParallelToolCalls": false,
+                  "SupportsStreamingToolCalls": false,
+                  "Labels": [
+                    "production"
+                  ],
+                  "Tags": {
+                    "owner": "platform-team"
+                  },
+                  "HealthCheckEnabled": true,
+                  "HealthCheckUrl": "http://ollama:11434/api/tags",
+                  "HealthCheckMethod": "GET",
+                  "HealthCheckIntervalMs": 30000,
+                  "HealthCheckTimeoutMs": 10000,
+                  "HealthCheckExpectedStatusCode": 200,
+                  "HealthyThreshold": 2,
+                  "UnhealthyThreshold": 2,
+                  "HealthCheckUseAuth": false
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16332,7 +16040,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16347,7 +16055,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16361,20 +16069,15 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Deletes an embedding endpoint in Partio and stops its health checks. Partio's status code is relayed; a 204 has no body, any other status relays Partio's JSON body."
+        }
       },
-      "head": {
+      "put": {
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Check endpointId existence",
-        "operationId": "head_v1_0_endpoints_embedding_endpointid",
+        "summary": "Update embedding endpoint",
+        "description": "Global administrators only; other callers receive 403. Partially updates an embedding endpoint. AssistantHub reads the current endpoint from Partio and overlays only the fields supplied by the caller, preserving fields it does not manage (health-check configuration, context size, other services' labels and tags). Labels and Tags are unioned with the existing values (caller wins on tag conflicts), and a blank ApiKey keeps the stored key. The merged object is sent to Partio PUT /v1.0/endpoints/embedding/{endpointId}; on success the health-check service is updated. The request is forwarded to Partio and Partio's HTTP status code and JSON body are relayed unchanged, so Partio validation (400) and not-found (404) errors pass through; Partio's endpoint object also carries EnableRequestHistory, Tokenization, CreatedUtc, and LastUpdateUtc. ",
+        "operationId": "PUT_v1_0_endpoints_embedding_endpointId",
         "parameters": [
           {
             "name": "endpointId",
@@ -16385,32 +16088,298 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Authorization failed."
-          },
-          "404": {
-            "description": "Not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "description": "Global administrators only; other callers receive 403. Relays Partio's HEAD status: 200 when the endpoint exists, 404 otherwise. No response body."
+        "requestBody": {
+          "required": true,
+          "description": "Fields to change; omitted fields keep their current values.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartioEndpointRequest"
+              },
+              "example": {
+                "Name": "Ollama Embeddings",
+                "Model": "all-minilm",
+                "Endpoint": "http://ollama:11434",
+                "ApiFormat": "Ollama",
+                "Active": true,
+                "MaxConcurrentRequests": 2,
+                "MaxQueueDepth": 0,
+                "MaximumTimeoutMs": 60000,
+                "SupportsToolCalling": false,
+                "SupportsParallelToolCalls": false,
+                "SupportsStreamingToolCalls": false,
+                "EnableRequestHistory": true,
+                "Labels": [
+                  "production"
+                ],
+                "Tags": {
+                  "owner": "platform-team"
+                },
+                "HealthCheckEnabled": true,
+                "HealthCheckUrl": "http://ollama:11434/api/tags",
+                "HealthCheckMethod": "GET",
+                "HealthCheckIntervalMs": 30000,
+                "HealthCheckTimeoutMs": 10000,
+                "HealthCheckExpectedStatusCode": 200,
+                "HealthyThreshold": 2,
+                "UnhealthyThreshold": 2,
+                "HealthCheckUseAuth": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated embedding endpoint (Partio's response, relayed unchanged).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartioEndpointConfig"
+                },
+                "example": {
+                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
+                  "Name": "Ollama Embeddings",
+                  "Model": "all-minilm",
+                  "TenantId": "default",
+                  "Endpoint": "http://ollama:11434",
+                  "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
+                  "Active": true,
+                  "MaxConcurrentRequests": 2,
+                  "MaxQueueDepth": 0,
+                  "MaximumTimeoutMs": 60000,
+                  "ContextSize": 0,
+                  "SupportsToolCalling": false,
+                  "SupportsParallelToolCalls": false,
+                  "SupportsStreamingToolCalls": false,
+                  "Labels": [
+                    "production"
+                  ],
+                  "Tags": {
+                    "owner": "platform-team"
+                  },
+                  "HealthCheckEnabled": true,
+                  "HealthCheckUrl": "http://ollama:11434/api/tags",
+                  "HealthCheckMethod": "GET",
+                  "HealthCheckIntervalMs": 30000,
+                  "HealthCheckTimeoutMs": 10000,
+                  "HealthCheckExpectedStatusCode": 200,
+                  "HealthyThreshold": 2,
+                  "UnhealthyThreshold": 2,
+                  "HealthCheckUseAuth": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Embedding Endpoints"
+        ],
+        "summary": "Delete embedding endpoint",
+        "description": "Global administrators only; other callers receive 403. Deletes an embedding endpoint in Partio and stops its health checks. Partio's status code is relayed; a 204 has no body, any other status relays Partio's JSON body.",
+        "operationId": "DELETE_v1_0_endpoints_embedding_endpointId",
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Endpoint deleted."
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "Embedding Endpoints"
+        ],
+        "summary": "Check embedding endpoint existence",
+        "description": "Global administrators only; other callers receive 403. Relays Partio's HEAD status: 200 when the endpoint exists, 404 otherwise. No response body.",
+        "operationId": "HEAD_v1_0_endpoints_embedding_endpointId",
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint exists."
+          },
+          "403": {
+            "description": "Authorization failed."
+          },
+          "404": {
+            "description": "Endpoint not found."
+          },
+          "500": {
+            "description": "Internal error."
+          },
+          "401": {
+            "description": "Authentication failed."
+          }
+        }
       }
     },
     "/v1.0/endpoints/embedding/{endpointId}/health": {
@@ -16418,8 +16387,9 @@
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Get endpoint health",
-        "operationId": "get_v1_0_endpoints_embedding_endpointid_health",
+        "summary": "Get embedding endpoint health",
+        "description": "Global administrators only; other callers receive 403. Returns health status for one endpoint from AssistantHub's local health-check service (provider-aware checks are delegated to Partio when needed), including uptime percentage and the last 24 hours of check history. Returns 404 when the endpoint is not being monitored (it does not exist, is inactive, or has HealthCheckEnabled false).",
+        "operationId": "GET_v1_0_endpoints_embedding_endpointId_health",
         "parameters": [
           {
             "name": "endpointId",
@@ -16430,9 +16400,14 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Endpoint health status.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16466,11 +16441,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16500,7 +16472,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16515,7 +16487,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16529,13 +16501,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Returns health status for one endpoint from AssistantHub's local health-check service (Partio is not called), including uptime percentage and the last 24 hours of check history. Returns 404 when the endpoint is not being monitored (it does not exist, is inactive, or has HealthCheckEnabled false)."
+        }
       }
     },
     "/v1.0/endpoints/embedding/{endpointId}/load": {
@@ -16543,8 +16509,9 @@
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Load endpoint model",
-        "operationId": "post_v1_0_endpoints_embedding_endpointid_load",
+        "summary": "Load embedding endpoint model",
+        "description": "Global administrators only; other callers receive 403. Loads or warms the endpoint's model through Partio POST /v1.0/endpoints/embedding/{endpointId}/load. The body is forwarded unchanged (an empty body is sent as {}). Partio's status code and model-load result are relayed unchanged; failures use the same response shape with Success false. The X-Partio-Endpoint-Id, X-Model, and X-Partio-Model response headers are copied from Partio when present.",
+        "operationId": "POST_v1_0_endpoints_embedding_endpointId_load",
         "parameters": [
           {
             "name": "endpointId",
@@ -16555,9 +16522,59 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Model-load options. Optional; every field has a Partio default.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Strategy": {
+                    "type": "string"
+                  },
+                  "TimeoutMs": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "KeepAlive": {
+                    "type": "string"
+                  },
+                  "SampleInput": {
+                    "type": "string"
+                  },
+                  "MaxTokens": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "RecordRequestHistory": {
+                    "type": "boolean"
+                  },
+                  "RequireNativeLoad": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "example": {
+                "Strategy": "Auto",
+                "TimeoutMs": 60000,
+                "KeepAlive": "30m",
+                "SampleInput": "Partio model load probe",
+                "MaxTokens": 1,
+                "RecordRequestHistory": true,
+                "RequireNativeLoad": false
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Model loaded or warmed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16644,7 +16661,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request. Please check your request and try again.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16659,7 +16676,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16689,7 +16706,7 @@
             }
           },
           "404": {
-            "description": "Not found",
+            "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16735,7 +16752,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16781,58 +16798,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "Strategy": {
-                    "type": "string"
-                  },
-                  "TimeoutMs": {
-                    "type": "integer",
-                    "format": "int32"
-                  },
-                  "KeepAlive": {
-                    "type": "string"
-                  },
-                  "SampleInput": {
-                    "type": "string"
-                  },
-                  "MaxTokens": {
-                    "type": "integer",
-                    "format": "int32"
-                  },
-                  "RecordRequestHistory": {
-                    "type": "boolean"
-                  },
-                  "RequireNativeLoad": {
-                    "type": "boolean"
-                  }
-                }
-              },
-              "example": {
-                "Strategy": "Auto",
-                "TimeoutMs": 60000,
-                "KeepAlive": "30m",
-                "SampleInput": "Partio model load probe",
-                "MaxTokens": 1,
-                "RecordRequestHistory": true,
-                "RequireNativeLoad": false
-              }
-            }
-          },
-          "description": "Model-load options. Optional; every field has a Partio default."
-        },
-        "description": "Global administrators only; other callers receive 403. Loads or warms the endpoint's model through Partio POST /v1.0/endpoints/embedding/{endpointId}/load. The body is forwarded unchanged (an empty body is sent as {}). Partio's status code and model-load result are relayed unchanged; failures use the same response shape with Success false. The X-Partio-Endpoint-Id, X-Model, and X-Partio-Model response headers are copied from Partio when present."
+        }
       }
     },
     "/v1.0/endpoints/embedding/{endpointId}/test": {
@@ -16840,8 +16806,9 @@
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Test endpoint",
-        "operationId": "post_v1_0_endpoints_embedding_endpointid_test",
+        "summary": "Test embedding endpoint",
+        "description": "Global administrators only; other callers receive 403. Runs a smoke test by sending the input as a one-element batch to Partio POST /v1.0/embed with this endpoint, then maps the first vector into a single-embedding response. The endpointId in the path overrides any EndpointId in the body; property names are case-sensitive. Upstream failures are reported inside the response body (Success false with the upstream StatusCode and Error) while the HTTP status stays 200. RequestHistoryId and EmbeddingCalls are not populated by this route.",
+        "operationId": "POST_v1_0_endpoints_embedding_endpointId_test",
         "parameters": [
           {
             "name": "endpointId",
@@ -16852,9 +16819,30 @@
             }
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Test input. Optional; an empty body embeds an empty string.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndpointExplorerEmbeddingRequest"
+              },
+              "example": {
+                "EndpointId": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
+                "Input": "AssistantHub embedding smoke test input",
+                "L2Normalization": false
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Test result. Check Success and StatusCode for the upstream outcome.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16879,11 +16867,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16912,11 +16897,8 @@
               }
             }
           },
-          "404": {
-            "description": "Not found"
-          },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16930,29 +16912,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EndpointExplorerEmbeddingRequest"
-              },
-              "example": {
-                "EndpointId": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
-                "Input": "AssistantHub embedding smoke test input",
-                "L2Normalization": false
-              }
-            }
-          },
-          "description": "Test input. Optional; an empty body embeds an empty string."
-        },
-        "description": "Global administrators only; other callers receive 403. Runs a smoke test by sending the input as a one-element batch to Partio POST /v1.0/embed with this endpoint, then maps the first vector into a single-embedding response. The endpointId in the path overrides any EndpointId in the body; property names are case-sensitive. Upstream failures are reported inside the response body (Success false with the upstream StatusCode and Error) while the HTTP status stays 200. RequestHistoryId and EmbeddingCalls are not populated by this route."
+        }
       }
     },
     "/v1.0/endpoints/embedding/enumerate": {
@@ -16960,125 +16920,10 @@
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Enumerate resources",
-        "operationId": "post_v1_0_endpoints_embedding_enumerate",
+        "summary": "List embedding endpoints",
+        "description": "Global administrators only; other callers receive 403. Forwards the request body unchanged to Partio POST /v1.0/endpoints/embedding/enumerate and converts Partio's { Data, TotalCount, HasMore } envelope into the standard AssistantHub enumeration result. On a non-2xx Partio response, Partio's status code and body are relayed unchanged.",
+        "operationId": "POST_v1_0_endpoints_embedding_enumerate",
         "parameters": [],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnumerationResultOfPartioEndpointConfig"
-                },
-                "example": {
-                  "Success": true,
-                  "MaxResults": 1,
-                  "TotalRecords": 1,
-                  "RecordsRemaining": 0,
-                  "EndOfResults": true,
-                  "TotalMs": 0,
-                  "Objects": [
-                    {
-                      "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
-                      "Name": "Ollama Embeddings",
-                      "Model": "all-minilm",
-                      "TenantId": "default",
-                      "Endpoint": "http://ollama:11434",
-                      "ApiFormat": "Ollama",
-                      "Active": true,
-                      "MaxConcurrentRequests": 2,
-                      "MaxQueueDepth": 0,
-                      "MaximumTimeoutMs": 60000,
-                      "ContextSize": 0,
-                      "SupportsToolCalling": false,
-                      "SupportsParallelToolCalls": false,
-                      "SupportsStreamingToolCalls": false,
-                      "Labels": [
-                        "production"
-                      ],
-                      "Tags": {
-                        "owner": "platform-team"
-                      },
-                      "HealthCheckEnabled": true,
-                      "HealthCheckUrl": "http://ollama:11434/api/tags",
-                      "HealthCheckMethod": "GET",
-                      "HealthCheckIntervalMs": 30000,
-                      "HealthCheckTimeoutMs": 10000,
-                      "HealthCheckExpectedStatusCode": 200,
-                      "HealthyThreshold": 2,
-                      "UnhealthyThreshold": 2,
-                      "HealthCheckUseAuth": false
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "BadRequest",
-                  "Message": "Bad request. Please check your request and try again.",
-                  "StatusCode": 400
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthenticationFailed",
-                  "Message": "Authentication failed. Please check your credentials.",
-                  "StatusCode": 401
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Authorization failed. You do not have permission to perform this action.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "AuthorizationFailed",
-                  "Message": "Authorization failed. You do not have permission to perform this action.",
-                  "StatusCode": 403
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found"
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "Error": "InternalError",
-                  "Message": "An internal error occurred. Please try again later.",
-                  "StatusCode": 500
-                }
-              }
-            }
-          }
-        },
         "security": [
           {
             "BearerAuth": []
@@ -17086,6 +16931,7 @@
         ],
         "requestBody": {
           "required": false,
+          "description": "Partio enumeration request. Optional; an empty body lists endpoints with Partio's defaults. Order is CreatedAscending, CreatedDescending, NameAscending, or NameDescending.",
           "content": {
             "application/json": {
               "schema": {
@@ -17126,10 +16972,122 @@
                 "ActiveFilter": true
               }
             }
-          },
-          "description": "Partio enumeration request. Optional; an empty body lists endpoints with Partio's defaults. Order is CreatedAscending, CreatedDescending, NameAscending, or NameDescending."
+          }
         },
-        "description": "Global administrators only; other callers receive 403. Forwards the request body unchanged to Partio POST /v1.0/endpoints/embedding/enumerate and converts Partio's { Data, TotalCount, HasMore } envelope into the standard AssistantHub enumeration result. On a non-2xx Partio response, Partio's status code and body are relayed unchanged."
+        "responses": {
+          "200": {
+            "description": "Page of embedding endpoints.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnumerationResultOfPartioEndpointConfig"
+                },
+                "example": {
+                  "Success": true,
+                  "MaxResults": 1,
+                  "TotalRecords": 1,
+                  "RecordsRemaining": 0,
+                  "EndOfResults": true,
+                  "TotalMs": 0,
+                  "Objects": [
+                    {
+                      "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
+                      "Name": "Ollama Embeddings",
+                      "Model": "all-minilm",
+                      "TenantId": "default",
+                      "Endpoint": "http://ollama:11434",
+                      "ApiFormat": "Ollama",
+                      "EnableRequestHistory": false,
+                      "Active": true,
+                      "MaxConcurrentRequests": 2,
+                      "MaxQueueDepth": 0,
+                      "MaximumTimeoutMs": 60000,
+                      "ContextSize": 0,
+                      "SupportsToolCalling": false,
+                      "SupportsParallelToolCalls": false,
+                      "SupportsStreamingToolCalls": false,
+                      "Labels": [
+                        "production"
+                      ],
+                      "Tags": {
+                        "owner": "platform-team"
+                      },
+                      "HealthCheckEnabled": true,
+                      "HealthCheckUrl": "http://ollama:11434/api/tags",
+                      "HealthCheckMethod": "GET",
+                      "HealthCheckIntervalMs": 30000,
+                      "HealthCheckTimeoutMs": 10000,
+                      "HealthCheckExpectedStatusCode": 200,
+                      "HealthyThreshold": 2,
+                      "UnhealthyThreshold": 2,
+                      "HealthCheckUseAuth": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1.0/endpoints/embedding/health": {
@@ -17137,12 +17095,18 @@
         "tags": [
           "Embedding Endpoints"
         ],
-        "summary": "Get endpoint health",
-        "operationId": "get_v1_0_endpoints_embedding_health",
+        "summary": "List embedding endpoint health",
+        "description": "Global administrators only; other callers receive 403. Returns health status from AssistantHub's local health-check service (provider-aware checks are delegated to Partio when needed) for every monitored endpoint. Only active endpoints with HealthCheckEnabled are monitored. The list is not filtered by endpoint type, so monitored completion endpoints are included as well. Returns an empty array when nothing is monitored.",
+        "operationId": "GET_v1_0_endpoints_embedding_health",
         "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Health status of all monitored endpoints.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17181,11 +17145,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
           "401": {
-            "description": "Unauthorized",
+            "description": "Authentication failed. Please check your credentials.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17214,11 +17175,8 @@
               }
             }
           },
-          "404": {
-            "description": "Not found"
-          },
           "500": {
-            "description": "Internal server error",
+            "description": "An internal error occurred. Please try again later.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17232,13 +17190,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "description": "Global administrators only; other callers receive 403. Returns health status from AssistantHub's local health-check service (Partio is not called) for every monitored endpoint. Only active endpoints with HealthCheckEnabled are monitored. The list is not filtered by endpoint type, so monitored completion endpoints are included as well. Returns an empty array when nothing is monitored."
+        }
       }
     },
     "/v1.0/eval/facts": {
@@ -30166,6 +30118,270 @@
           }
         }
       }
+    },
+    "/v1.0/endpoints/embedding/{endpointId}/reveal": {
+      "get": {
+        "tags": [
+          "Embedding Endpoints"
+        ],
+        "summary": "Reveal embedding endpoint credentials",
+        "description": "Global administrators only; other callers receive 403. Returns the unmasked endpoint through Partio's audited reveal API. Normal reads and mutations mask ApiKey and provider secrets. This route is intentionally unavailable through MCP.",
+        "operationId": "GET_v1_0_endpoints_embedding_endpointId_reveal",
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unmasked embedding endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartioEndpointConfig"
+                },
+                "example": {
+                  "Id": "ep_01JH3ZA3D5E7F9G1H3J5K7M9N1",
+                  "Name": "Ollama Embeddings",
+                  "Model": "all-minilm",
+                  "TenantId": "default",
+                  "Endpoint": "http://ollama:11434",
+                  "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
+                  "Active": true,
+                  "MaxConcurrentRequests": 2,
+                  "MaxQueueDepth": 0,
+                  "MaximumTimeoutMs": 60000,
+                  "ContextSize": 0,
+                  "SupportsToolCalling": false,
+                  "SupportsParallelToolCalls": false,
+                  "SupportsStreamingToolCalls": false,
+                  "Labels": [
+                    "production"
+                  ],
+                  "Tags": {
+                    "owner": "platform-team"
+                  },
+                  "HealthCheckEnabled": true,
+                  "HealthCheckUrl": "http://ollama:11434/api/tags",
+                  "HealthCheckMethod": "GET",
+                  "HealthCheckIntervalMs": 30000,
+                  "HealthCheckTimeoutMs": 10000,
+                  "HealthCheckExpectedStatusCode": 200,
+                  "HealthyThreshold": 2,
+                  "UnhealthyThreshold": 2,
+                  "HealthCheckUseAuth": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/endpoints/completion/{endpointId}/reveal": {
+      "get": {
+        "tags": [
+          "Completion Endpoints"
+        ],
+        "summary": "Reveal completion endpoint credentials",
+        "description": "Global administrators only; other callers receive 403. Returns the unmasked endpoint through Partio's audited reveal API. Normal reads and mutations mask ApiKey and provider secrets. This route is intentionally unavailable through MCP.",
+        "operationId": "GET_v1_0_endpoints_completion_endpointId_reveal",
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unmasked completion endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartioEndpointConfig"
+                },
+                "example": {
+                  "Id": "cep_01JH3ZA1B3C5D7E9F1G3H5J7K9",
+                  "Name": "Ollama Gemma",
+                  "Model": "gemma3:4b",
+                  "TenantId": "default",
+                  "Endpoint": "http://ollama:11434",
+                  "ApiFormat": "Ollama",
+                  "EnableRequestHistory": false,
+                  "Active": true,
+                  "MaxConcurrentRequests": 2,
+                  "MaxQueueDepth": 4,
+                  "MaximumTimeoutMs": 120000,
+                  "ContextSize": 8192,
+                  "SupportsToolCalling": true,
+                  "ToolCallingApiFormat": "OllamaChat",
+                  "SupportsParallelToolCalls": false,
+                  "SupportsStreamingToolCalls": false,
+                  "Labels": [
+                    "production",
+                    "assistanthub:tool-calling"
+                  ],
+                  "Tags": {
+                    "owner": "assistant-team",
+                    "AssistantHub.SupportsToolCalling": "true",
+                    "AssistantHub.ToolCallingApiFormat": "OllamaChat",
+                    "AssistantHub.SupportsParallelToolCalls": "false",
+                    "AssistantHub.SupportsStreamingToolCalls": "false"
+                  },
+                  "HealthCheckEnabled": true,
+                  "HealthCheckUrl": "http://ollama:11434/api/tags",
+                  "HealthCheckMethod": "GET",
+                  "HealthCheckIntervalMs": 30000,
+                  "HealthCheckTimeoutMs": 10000,
+                  "HealthCheckExpectedStatusCode": 200,
+                  "HealthyThreshold": 2,
+                  "UnhealthyThreshold": 2,
+                  "HealthCheckUseAuth": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -31382,6 +31598,10 @@
         "type": "object",
         "description": "Provider-neutral representation of a model-requested tool call.",
         "properties": {
+          "ThoughtSignature": {
+            "type": "string",
+            "description": "Opaque Vertex/Gemini thought signature replayed with a tool call."
+          },
           "id": {
             "type": "string",
             "description": "Provider-supplied tool call identifier."
@@ -31657,7 +31877,7 @@
           "RerankerScoreThreshold": {
             "type": "number",
             "format": "double",
-            "description": "Minimum LLM relevance score (0.0–10.0) for a chunk to survive re-ranking."
+            "description": "Minimum LLM relevance score (0.0\u201310.0) for a chunk to survive re-ranking."
           },
           "RerankPrompt": {
             "type": "string",
@@ -33740,7 +33960,7 @@
           "rerank_score": {
             "type": "number",
             "format": "double",
-            "description": "LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.",
+            "description": "LLM-assigned re-rank relevance score (0\u201310), null when re-ranking is disabled.",
             "nullable": true
           },
           "excerpt": {
@@ -35905,7 +36125,7 @@
       },
       "EvalFact": {
         "type": "object",
-        "description": "Evaluation fact record — a question with expected facts for RAG evaluation.",
+        "description": "Evaluation fact record \u2014 a question with expected facts for RAG evaluation.",
         "properties": {
           "Id": {
             "type": "string",
@@ -35945,7 +36165,7 @@
       },
       "EvalResult": {
         "type": "object",
-        "description": "Evaluation result record — the outcome of evaluating a single fact within a run.",
+        "description": "Evaluation result record \u2014 the outcome of evaluating a single fact within a run.",
         "properties": {
           "Id": {
             "type": "string",
@@ -36021,7 +36241,7 @@
       },
       "EvalRun": {
         "type": "object",
-        "description": "Evaluation run record — tracks progress and results of an evaluation execution.",
+        "description": "Evaluation run record \u2014 tracks progress and results of an evaluation execution.",
         "properties": {
           "Id": {
             "type": "string",
@@ -36404,7 +36624,13 @@
               "Ollama",
               "Gemini",
               "OllamaCloud",
-              "xAI"
+              "xAI",
+              "vLLM",
+              "AzureOpenAI",
+              "Anthropic",
+              "Cohere",
+              "Bedrock",
+              "VertexAI"
             ]
           },
           "Endpoint": {
@@ -36414,6 +36640,9 @@
           "ApiKey": {
             "type": "string",
             "description": "API key for the inference provider."
+          },
+          "ProviderSettings": {
+            "$ref": "#/components/schemas/ProviderSettings"
           },
           "DefaultModel": {
             "type": "string",
@@ -36431,7 +36660,7 @@
           "UtilityTimeoutMs": {
             "type": "integer",
             "format": "int32",
-            "description": "Timeout, in milliseconds, for a utility-model step (retrieval gate, query or conversation rewrite, LLM rerank, answerability check), from 1,000 to 600,000. A timed-out step falls back to its default behavior. Default 30,000."
+            "description": "Timeout, in milliseconds, for a utility-model step (retrieval gate, query or conversation rewrite, LLM rerank), from 1,000 to 600,000. A timed-out step falls back to its default behavior. Default 30,000."
           },
           "MaxRetries": {
             "type": "integer",
@@ -36824,6 +37053,29 @@
             "type": "string",
             "description": "Upstream API key."
           },
+          "ProviderSettings": {
+            "$ref": "#/components/schemas/ProviderSettings"
+          },
+          "CreatedUtc": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-assigned endpoint creation timestamp.",
+            "nullable": true
+          },
+          "LastUpdateUtc": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-assigned endpoint update timestamp.",
+            "nullable": true
+          },
+          "EnableRequestHistory": {
+            "type": "boolean",
+            "description": "Per-endpoint request history recording."
+          },
+          "Tokenization": {
+            "type": "object",
+            "description": "Provider tokenization settings managed by Partio."
+          },
           "Active": {
             "type": "boolean",
             "description": "Whether the endpoint is active."
@@ -36842,6 +37094,18 @@
             "type": "integer",
             "format": "int32",
             "description": "Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint. This is distinct from the health check timeout."
+          },
+          "RequestTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "AssistantHub's timeout, in milliseconds, for its own calls to this endpoint: answer calls to a completion endpoint, or query embeddings through an embedding endpoint. Null uses the server default ( Inference.RequestTimeoutMs or Chunking.QueryEmbeddingTimeoutMs ). Stored as the AssistantHub.RequestTimeoutMs tag.",
+            "nullable": true
+          },
+          "UtilityTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "AssistantHub's timeout, in milliseconds, for utility steps (retrieval gate, query and conversation rewrite, LLM rerank) on this completion endpoint. Null uses Inference.UtilityTimeoutMs . Stored as the AssistantHub.UtilityTimeoutMs tag.",
+            "nullable": true
           },
           "ContextSize": {
             "type": "integer",
@@ -36915,18 +37179,6 @@
           "HealthCheckUseAuth": {
             "type": "boolean",
             "description": "Whether auth is used for health checks."
-          },
-          "RequestTimeoutMs": {
-            "type": "integer",
-            "format": "int32",
-            "description": "AssistantHub's timeout, in milliseconds, for its own calls to this endpoint: answer calls to a completion endpoint, or query embeddings through an embedding endpoint. Null uses the server default ( Inference.RequestTimeoutMs or Chunking.QueryEmbeddingTimeoutMs ). Stored as the AssistantHub.RequestTimeoutMs tag.",
-            "nullable": true
-          },
-          "UtilityTimeoutMs": {
-            "type": "integer",
-            "format": "int32",
-            "description": "AssistantHub's timeout, in milliseconds, for utility steps (retrieval gate, query and conversation rewrite, LLM rerank) on this completion endpoint. Null uses Inference.UtilityTimeoutMs . Stored as the AssistantHub.UtilityTimeoutMs tag.",
-            "nullable": true
           }
         }
       },
@@ -36958,6 +37210,13 @@
             "type": "string",
             "description": "API key."
           },
+          "ProviderSettings": {
+            "$ref": "#/components/schemas/ProviderSettings"
+          },
+          "Tokenization": {
+            "type": "object",
+            "description": "Partio tokenization settings; omitted updates preserve the current value."
+          },
           "Active": {
             "type": "boolean",
             "description": "Whether the endpoint is active."
@@ -36978,6 +37237,18 @@
             "type": "integer",
             "format": "int32",
             "description": "Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint. This is distinct from the health check timeout. Left null on partial updates to preserve the stored value.",
+            "nullable": true
+          },
+          "RequestTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for its own calls to this endpoint: answer calls to a completion endpoint, or query embeddings through an embedding endpoint. 0 clears it (server default); omit it on updates to keep the stored value.",
+            "nullable": true
+          },
+          "UtilityTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for utility steps on this completion endpoint (retrieval gate, rewrites, LLM rerank). 0 clears it; omit it on updates to keep the stored value.",
             "nullable": true
           },
           "ContextSize": {
@@ -37057,18 +37328,6 @@
           "HealthCheckUseAuth": {
             "type": "boolean",
             "description": "Whether auth is used on health checks."
-          },
-          "RequestTimeoutMs": {
-            "type": "integer",
-            "format": "int32",
-            "description": "AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for its own calls to this endpoint: answer calls to a completion endpoint, or query embeddings through an embedding endpoint. 0 clears it (server default); omit it on updates to keep the stored value.",
-            "nullable": true
-          },
-          "UtilityTimeoutMs": {
-            "type": "integer",
-            "format": "int32",
-            "description": "AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for utility steps on this completion endpoint (retrieval gate, rewrites, LLM rerank). 0 clears it; omit it on updates to keep the stored value.",
-            "nullable": true
           }
         }
       },
@@ -37518,7 +37777,7 @@
           "rerank_score": {
             "type": "number",
             "format": "double",
-            "description": "LLM-assigned relevance score from re-ranking (0.0–10.0), null when re-ranking is disabled.",
+            "description": "LLM-assigned relevance score from re-ranking (0.0\u201310.0), null when re-ranking is disabled.",
             "nullable": true
           },
           "fusion_score": {
@@ -38704,6 +38963,148 @@
             "type": "number",
             "format": "double",
             "description": "Round-trip duration in milliseconds."
+          }
+        }
+      },
+      "AnthropicProviderSettings": {
+        "type": "object",
+        "description": "Anthropic settings.",
+        "properties": {
+          "AnthropicVersion": {
+            "type": "string"
+          },
+          "WorkspaceId": {
+            "type": "string"
+          }
+        }
+      },
+      "AzureOpenAiProviderSettings": {
+        "type": "object",
+        "description": "Azure OpenAI settings. The endpoint Model is the deployment name.",
+        "properties": {
+          "ApiVersion": {
+            "type": "string",
+            "description": "api-version query value. Null uses the server default (2024-10-21)."
+          },
+          "AuthMode": {
+            "type": "string",
+            "description": "ApiKey (api-key header) or BearerToken (Entra ID token in ApiKey)."
+          }
+        }
+      },
+      "BedrockProviderSettings": {
+        "type": "object",
+        "description": "AWS Bedrock settings. ApiKey is not used.",
+        "properties": {
+          "Region": {
+            "type": "string"
+          },
+          "CredentialSource": {
+            "type": "string",
+            "description": "Static or Environment."
+          },
+          "AccessKeyId": {
+            "type": "string"
+          },
+          "SecretAccessKey": {
+            "type": "string",
+            "description": "Masked on read."
+          },
+          "SessionToken": {
+            "type": "string",
+            "description": "Masked on read."
+          }
+        }
+      },
+      "CohereProviderSettings": {
+        "type": "object",
+        "description": "Cohere settings.",
+        "properties": {
+          "InputType": {
+            "type": "string"
+          }
+        }
+      },
+      "EndpointAuthSettings": {
+        "type": "object",
+        "description": "Selectable authentication for Ollama, vLLM, TEI, and OpenAI endpoints. The credential (bearer token, header value, query value, or basic password) is the endpoint ApiKey, which is masked on read.",
+        "properties": {
+          "Mode": {
+            "type": "string",
+            "description": "None, Bearer, Header, QueryParameter, or Basic. See EndpointAuthModes ."
+          },
+          "HeaderName": {
+            "type": "string",
+            "description": "Header that carries the ApiKey when Mode is Header, for example X-API-Key."
+          },
+          "QueryParameterName": {
+            "type": "string",
+            "description": "Query parameter that carries the ApiKey when Mode is QueryParameter, for example api_key."
+          },
+          "Username": {
+            "type": "string",
+            "description": "User name when Mode is Basic; the ApiKey is the password."
+          }
+        }
+      },
+      "ProviderSettings": {
+        "type": "object",
+        "description": "Optional provider-specific endpoint settings. Only the section matching the endpoint's ApiFormat is kept by the server; Bedrock and VertexAI endpoints require their section. Secret fields are masked on read.",
+        "properties": {
+          "Auth": {
+            "$ref": "#/components/schemas/EndpointAuthSettings"
+          },
+          "AzureOpenAI": {
+            "$ref": "#/components/schemas/AzureOpenAiProviderSettings"
+          },
+          "Anthropic": {
+            "$ref": "#/components/schemas/AnthropicProviderSettings"
+          },
+          "Bedrock": {
+            "$ref": "#/components/schemas/BedrockProviderSettings"
+          },
+          "VertexAI": {
+            "$ref": "#/components/schemas/VertexAiProviderSettings"
+          },
+          "Cohere": {
+            "$ref": "#/components/schemas/CohereProviderSettings"
+          },
+          "VoyageAI": {
+            "$ref": "#/components/schemas/VoyageAiProviderSettings"
+          }
+        }
+      },
+      "VertexAiProviderSettings": {
+        "type": "object",
+        "description": "Google Vertex AI settings.",
+        "properties": {
+          "ProjectId": {
+            "type": "string"
+          },
+          "Region": {
+            "type": "string"
+          },
+          "CredentialSource": {
+            "type": "string",
+            "description": "ServiceAccountJson, ApplicationDefault, or AccessToken (token in ApiKey)."
+          },
+          "ServiceAccountJson": {
+            "type": "string",
+            "description": "Full service-account key JSON. Masked on read."
+          }
+        }
+      },
+      "VoyageAiProviderSettings": {
+        "type": "object",
+        "description": "VoyageAI settings.",
+        "properties": {
+          "InputType": {
+            "type": "string"
+          },
+          "OutputDimension": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         }
       }

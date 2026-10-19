@@ -20,14 +20,17 @@ namespace AssistantHub.Core.Settings
         /// </summary>
         public string Endpoint
         {
-            get => _Endpoint;
-            set { if (!String.IsNullOrEmpty(value)) _Endpoint = value; }
+            get => _Endpoint ?? AssistantHub.Core.Helpers.InferenceProviderHelper.GetDefaultEndpoint(Provider);
+            set { _Endpoint = String.IsNullOrEmpty(value) ? null : value; }
         }
 
         /// <summary>
         /// API key for the inference provider.
         /// </summary>
         public string ApiKey { get; set; } = "";
+
+        /// <summary>Provider-specific credentials and options for the system inference endpoint.</summary>
+        public AssistantHub.Core.Models.ProviderSettings? ProviderSettings { get; set; }
 
         /// <summary>
         /// Default model to use for inference.
@@ -117,7 +120,7 @@ namespace AssistantHub.Core.Settings
         private int _RetryDelayMs = 500;
         private int _CircuitBreakerFailures = 3;
         private int _CircuitBreakerOpenMs = 30000;
-        private string _Endpoint = "http://localhost:11434";
+        private string _Endpoint = null;
         private string _DefaultModel = "gemma3:4b";
         private string _DashboardUrl = "";
 

@@ -1,4 +1,5 @@
-export const API_FORMAT_OPTIONS = ['Ollama', 'OllamaCloud', 'OpenAI', 'xAI', 'Gemini'];
+import { PROVIDERS, getProvider, getProviderDefaults, getHealthCheckDefaults, defaultProviderSettings } from './providers.js';
+export const API_FORMAT_OPTIONS = PROVIDERS.map(provider => provider.value);
 export const HEALTH_CHECK_METHOD_OPTIONS = ['GET', 'POST', 'HEAD'];
 
 // Default per-endpoint request timeout (distinct from the health check timeout), in milliseconds.
@@ -87,11 +88,12 @@ function appendVersionedPath(endpoint, versionSegment, path) {
 }
 
 export function getDefaultEndpoint(apiFormat = 'Ollama') {
-  return FORMAT_DEFAULTS[apiFormat]?.Endpoint || FORMAT_DEFAULTS.Ollama.Endpoint;
+  return FORMAT_DEFAULTS[apiFormat]?.Endpoint ?? getProviderDefaults(apiFormat, 'completion', defaultProviderSettings(apiFormat)).Endpoint;
 }
 
 export function getDefaultHealthCheckUrl(endpoint, apiFormat = 'Ollama') {
   if (!endpoint) return '';
+  if (!FORMAT_DEFAULTS[apiFormat]) return getHealthCheckDefaults(apiFormat, endpoint, defaultProviderSettings(apiFormat)).HealthCheckUrl || '';
 
   switch (apiFormat) {
     case 'xAI':
@@ -147,7 +149,7 @@ export function getHealthCheckUrlForEndpointChange(currentHealthCheckUrl, previo
 }
 
 export function getApiFormatDefaults(apiFormat = 'Ollama', endpoint = null) {
-  const defaults = FORMAT_DEFAULTS[apiFormat] || FORMAT_DEFAULTS.Ollama;
+  const defaults = FORMAT_DEFAULTS[apiFormat] || { ...getProviderDefaults(apiFormat, 'completion', defaultProviderSettings(apiFormat)), ...getHealthCheckDefaults(apiFormat, endpoint, defaultProviderSettings(apiFormat)) };
   const resolvedEndpoint = endpoint || defaults.Endpoint;
 
   return {
@@ -159,14 +161,15 @@ export function getApiFormatDefaults(apiFormat = 'Ollama', endpoint = null) {
 }
 
 export function getDefaultModel(apiFormat = 'Ollama', endpointType = 'inference') {
-  const defaults = FORMAT_DEFAULTS[apiFormat] || FORMAT_DEFAULTS.Ollama;
+  if (!FORMAT_DEFAULTS[apiFormat]) return getProvider(apiFormat).model.defaults[endpointType === 'embedding' ? 'embedding' : 'completion'] || '';
+  const defaults = FORMAT_DEFAULTS[apiFormat];
   return endpointType === 'embedding'
     ? defaults.DefaultEmbeddingModel
     : defaults.DefaultInferenceModel;
 }
 
 export function getDefaultToolCallingApiFormat(apiFormat) {
-  return ['Ollama', 'OllamaCloud'].includes(apiFormat) ? 'OllamaChat' : 'OpenAIChatCompletions';
+  return ['Ollama', 'OllamaCloud'].includes(apiFormat) ? 'OllamaChat' : ['OpenAI', 'xAI', 'vLLM'].includes(apiFormat) ? 'OpenAIChatCompletions' : 'Native';
 }
 
 const PROVIDER_FIELDS = {

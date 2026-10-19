@@ -7,9 +7,11 @@ namespace AssistantHub.Core.Models
     /// </summary>
     public class AssistantModelToolCall
     {
-        /// <summary>
-        /// Provider-supplied tool call identifier.
-        /// </summary>
+        /// <summary>Opaque Vertex/Gemini thought signature replayed with a tool call.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string ThoughtSignature { get; set; }
+
+        /// <summary>Provider-supplied tool call identifier.</summary>
         [JsonPropertyName("id")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string Id { get; set; } = null;

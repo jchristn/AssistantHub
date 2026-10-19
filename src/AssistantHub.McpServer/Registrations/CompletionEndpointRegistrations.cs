@@ -28,7 +28,7 @@ namespace AssistantHub.McpServer.Registrations
                         properties = new
                         {
                             queryJson = new { type = "string", description = "Optional EnumerationQuery serialized as JSON string." },
-                            includeSecrets = new { type = "boolean", description = "If true, include API keys in the response." }
+                            includeSecrets = new { type = "boolean", description = "Skip additional local redaction. Partio still masks stored credentials; this cannot reveal them." }
                         },
                         required = System.Array.Empty<string>()
                     },
@@ -49,27 +49,27 @@ namespace AssistantHub.McpServer.Registrations
                         properties = new
                         {
                             endpointId = new { type = "string", description = "Completion endpoint identifier." },
-                            includeSecrets = new { type = "boolean", description = "If true, include API keys in the response." }
+                            includeSecrets = new { type = "boolean", description = "Skip additional local redaction. Partio still masks stored credentials; this cannot reveal them." }
                         },
                         required = new[] { "endpointId" }
                     },
                     Handler = args =>
                     {
                         bool includeSecrets = AssistantHubMcpServerHelpers.GetBoolOrDefault(args, "includeSecrets", false);
-                        return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetCompletionEndpointAsync(AssistantHubMcpServerHelpers.GetStringRequired(args, "endpointId")).GetAwaiter().GetResult(), includeSecrets);
+                        return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetCompletionEndpointAsync(AssistantHubMcpServerHelpers.GetEndpointIdRequired(args, "endpointId")).GetAwaiter().GetResult(), includeSecrets);
                     }
                 },
                 new()
                 {
                     Name = "completionendpoint_create",
-                    Description = "Create a completion endpoint. ApiFormat supports OllamaCloud (https://ollama.com) and xAI (https://api.x.ai); both require ApiKey and a provider-supported Model.",
+                    Description = "Create a completion endpoint. ApiFormat and ProviderSettings follow Partio v0.5.2, including selectable Auth for Ollama/vLLM/OpenAI/TEI and cloud provider settings. Normal responses mask secrets; reveal is intentionally unavailable through MCP.",
                     InputSchema = new
                     {
                         type = "object",
                         properties = new
                         {
                             endpointJson = new { type = "string", description = "CompletionEndpoint serialized as JSON string." },
-                            includeSecrets = new { type = "boolean", description = "If true, include API keys in the response." }
+                            includeSecrets = new { type = "boolean", description = "Skip additional local redaction. Partio still masks stored credentials; this cannot reveal them." }
                         },
                         required = new[] { "endpointJson" }
                     },
@@ -90,15 +90,15 @@ namespace AssistantHub.McpServer.Registrations
                         properties = new
                         {
                             endpointId = new { type = "string", description = "Completion endpoint identifier." },
-                            endpointJson = new { type = "string", description = "CompletionEndpoint serialized as JSON string." },
-                            includeSecrets = new { type = "boolean", description = "If true, include API keys in the response." }
+                            endpointJson = new { type = "string", description = "Partial endpoint JSON object. Omitted fields are preserved; explicit null clears a credential." },
+                            includeSecrets = new { type = "boolean", description = "Skip additional local redaction. Partio still masks stored credentials; this cannot reveal them." }
                         },
                         required = new[] { "endpointId", "endpointJson" }
                     },
                     Handler = args =>
                     {
-                        string endpointId = AssistantHubMcpServerHelpers.GetStringRequired(args, "endpointId");
-                        CompletionEndpoint endpoint = AssistantHubMcpServerHelpers.DeserializeRequired<CompletionEndpoint>(args, "endpointJson");
+                        string endpointId = AssistantHubMcpServerHelpers.GetEndpointIdRequired(args, "endpointId");
+                        Dictionary<string, object> endpoint = AssistantHubMcpServerHelpers.DeserializeRequired<Dictionary<string, object>>(args, "endpointJson");
                         bool includeSecrets = AssistantHubMcpServerHelpers.GetBoolOrDefault(args, "includeSecrets", false);
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.UpdateCompletionEndpointAsync(endpointId, endpoint).GetAwaiter().GetResult(), includeSecrets);
                     }
@@ -118,7 +118,7 @@ namespace AssistantHub.McpServer.Registrations
                     },
                     Handler = args =>
                     {
-                        context.Sdk.DeleteCompletionEndpointAsync(AssistantHubMcpServerHelpers.GetStringRequired(args, "endpointId")).GetAwaiter().GetResult();
+                        context.Sdk.DeleteCompletionEndpointAsync(AssistantHubMcpServerHelpers.GetEndpointIdRequired(args, "endpointId")).GetAwaiter().GetResult();
                         return true;
                     }
                 },
@@ -135,7 +135,7 @@ namespace AssistantHub.McpServer.Registrations
                         },
                         required = new[] { "endpointId" }
                     },
-                    Handler = args => context.Sdk.CompletionEndpointExistsAsync(AssistantHubMcpServerHelpers.GetStringRequired(args, "endpointId")).GetAwaiter().GetResult()
+                    Handler = args => context.Sdk.CompletionEndpointExistsAsync(AssistantHubMcpServerHelpers.GetEndpointIdRequired(args, "endpointId")).GetAwaiter().GetResult()
                 },
                 new()
                 {
@@ -176,7 +176,7 @@ namespace AssistantHub.McpServer.Registrations
                     },
                     Handler = args =>
                     {
-                        string endpointId = AssistantHubMcpServerHelpers.GetStringRequired(args, "endpointId");
+                        string endpointId = AssistantHubMcpServerHelpers.GetEndpointIdRequired(args, "endpointId");
                         EndpointExplorerCompletionRequest request = AssistantHubMcpServerHelpers.DeserializeRequired<EndpointExplorerCompletionRequest>(args, "requestJson");
                         bool includeSecrets = AssistantHubMcpServerHelpers.GetBoolOrDefault(args, "includeSecrets", false);
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.TestCompletionEndpointAsync(endpointId, request).GetAwaiter().GetResult(), includeSecrets);

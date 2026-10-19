@@ -21,6 +21,10 @@ namespace AssistantHub.Server.Services
 
             AssistantHubSettings clone = Serializer.DeserializeJson<AssistantHubSettings>(Serializer.SerializeJson(settings));
             RedactExternalSearchProviderApiKeys(clone);
+            if (!String.IsNullOrEmpty(clone.Inference.ApiKey)) clone.Inference.ApiKey = ExternalSearchConfigurationHelper.RedactedSecret;
+            if (!String.IsNullOrEmpty(clone.Inference.ProviderSettings?.Bedrock?.SecretAccessKey)) clone.Inference.ProviderSettings.Bedrock.SecretAccessKey = ExternalSearchConfigurationHelper.RedactedSecret;
+            if (!String.IsNullOrEmpty(clone.Inference.ProviderSettings?.Bedrock?.SessionToken)) clone.Inference.ProviderSettings.Bedrock.SessionToken = ExternalSearchConfigurationHelper.RedactedSecret;
+            if (!String.IsNullOrEmpty(clone.Inference.ProviderSettings?.VertexAI?.ServiceAccountJson)) clone.Inference.ProviderSettings.VertexAI.ServiceAccountJson = ExternalSearchConfigurationHelper.RedactedSecret;
             foreach (RerankerSettings reranker in clone.Rerankers ?? new List<RerankerSettings>())
             {
                 if (reranker != null && !String.IsNullOrWhiteSpace(reranker.ApiKey))
@@ -35,6 +39,13 @@ namespace AssistantHub.Server.Services
         /// </summary>
         public static void PreserveRedactedExternalSearchSecrets(AssistantHubSettings updated, AssistantHubSettings current)
         {
+            if (updated?.Inference != null && current?.Inference != null)
+            {
+                if (IsRedacted(updated.Inference.ApiKey)) updated.Inference.ApiKey = current.Inference.ApiKey;
+                if (IsRedacted(updated.Inference.ProviderSettings?.Bedrock?.SecretAccessKey)) updated.Inference.ProviderSettings.Bedrock.SecretAccessKey = current.Inference.ProviderSettings?.Bedrock?.SecretAccessKey;
+                if (IsRedacted(updated.Inference.ProviderSettings?.Bedrock?.SessionToken)) updated.Inference.ProviderSettings.Bedrock.SessionToken = current.Inference.ProviderSettings?.Bedrock?.SessionToken;
+                if (IsRedacted(updated.Inference.ProviderSettings?.VertexAI?.ServiceAccountJson)) updated.Inference.ProviderSettings.VertexAI.ServiceAccountJson = current.Inference.ProviderSettings?.VertexAI?.ServiceAccountJson;
+            }
             // Reranker keys are redacted the same way; restore them by reranker Id.
             foreach (RerankerSettings reranker in updated?.Rerankers ?? new List<RerankerSettings>())
             {

@@ -39,6 +39,15 @@ namespace AssistantHub.McpServer.Classes
         /// <summary>
         /// Get a required string property.
         /// </summary>
+        public static string GetEndpointIdRequired(JsonElement? args, string propertyName)
+        {
+            string id = GetStringRequired(args, propertyName);
+            foreach (char value in id)
+                if (!Char.IsLetterOrDigit(value) && value != '_' && value != '-')
+                    throw new ArgumentException("Endpoint identifiers must contain only letters, digits, underscores, or hyphens.");
+            return id;
+        }
+
         public static string GetStringRequired(JsonElement? args, string propertyName)
         {
             if (!TryGetProperty(args, propertyName, out JsonElement prop))

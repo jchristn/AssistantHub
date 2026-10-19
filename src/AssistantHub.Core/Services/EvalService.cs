@@ -287,6 +287,7 @@ namespace AssistantHub.Core.Services
                                 new ChatCompletionMessage { Role = "user", Content = fact.Question }
                             };
 
+                            using IDisposable answerProviderScope = PartioEndpointRuntime.Use(settings.InferenceEndpointId);
                             using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(settings.InferenceEndpointId));
                             InferenceResult chatResult = await _Inference.GenerateResponseAsync(
                                 messages, model, maxTokens, temperature, topP,
@@ -325,6 +326,7 @@ namespace AssistantHub.Core.Services
                                 new ChatCompletionMessage { Role = "user", Content = judgeQuestion }
                             };
 
+                            using IDisposable providerScope = PartioEndpointRuntime.Use(judgeEndpointId);
                             using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(judgeEndpointId));
                             InferenceResult judgeResult = await _Inference.GenerateResponseAsync(
                                 judgeMessages, judgeModel, 512, 0.0, 1.0,
@@ -424,9 +426,7 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                using (HttpResponseMessage response = await _InferenceEndpoints.SendAsync(
-                    HttpMethod.Get,
-                    "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false))
+                using (HttpResponseMessage response = await PartioEndpointRuntime.ReadAsync(_InferenceEndpoints, endpointId).ConfigureAwait(false))
                 {
                     if (!response.IsSuccessStatusCode)
                     {
@@ -436,6 +436,7 @@ namespace AssistantHub.Core.Services
 
                     string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _JsonOptions);
+                    PartioEndpointRuntime.Remember(ep);
                     PartioEndpointToolMetadata.ReadTagsToToolFields(ep);
 
                     InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, InferenceProviderEnum.Ollama);
@@ -444,7 +445,7 @@ namespace AssistantHub.Core.Services
                     {
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
-                        ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey,
+                        ApiKey = ep == null ? _Settings.Inference.ApiKey : ep.ApiKey,
                         Model = ep?.Model,
                         SupportsToolCalling = ep?.SupportsToolCalling == true,
                         ToolCallingApiFormat = ep?.ToolCallingApiFormat,

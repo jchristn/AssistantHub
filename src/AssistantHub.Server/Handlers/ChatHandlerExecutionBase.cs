@@ -885,9 +885,7 @@ namespace AssistantHub.Server.Handlers
         {
             try
             {
-                using (HttpResponseMessage response = await InferenceEndpoints.SendAsync(
-                    System.Net.Http.HttpMethod.Get,
-                    "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false))
+                using (HttpResponseMessage response = await PartioEndpointRuntime.ReadAsync(InferenceEndpoints, endpointId).ConfigureAwait(false))
                 {
                     if (!response.IsSuccessStatusCode)
                     {
@@ -897,6 +895,7 @@ namespace AssistantHub.Server.Handlers
 
                     string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _SseJsonOptions);
+                    PartioEndpointRuntime.Remember(ep);
                     PartioEndpointToolMetadata.ReadTagsToToolFields(ep);
 
                     Enums.InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, Enums.InferenceProviderEnum.Ollama);
@@ -906,7 +905,7 @@ namespace AssistantHub.Server.Handlers
                         EndpointId = endpointId,
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? Settings.Inference.Endpoint,
-                        ApiKey = ep?.ApiKey ?? Settings.Inference.ApiKey,
+                        ApiKey = ep == null ? Settings.Inference.ApiKey : ep.ApiKey,
                         Model = ep?.Model,
                         MaxConcurrentRequests = Math.Max(1, ep?.MaxConcurrentRequests ?? 1),
                         SupportsToolCalling = ep?.SupportsToolCalling == true,
@@ -973,6 +972,7 @@ namespace AssistantHub.Server.Handlers
                         ", waitedMs=" + waitSw.ElapsedMilliseconds);
                 }
 
+                using IDisposable providerScope = PartioEndpointRuntime.Use(endpointId);
                 using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                 InferenceResult result = await Inference.GenerateResponseAsync(
                     messages, model, maxTokens, temperature, topP,
@@ -1024,6 +1024,7 @@ namespace AssistantHub.Server.Handlers
                     string transientError = null;
                     int currentAttempt = attempt;
 
+                    using IDisposable providerScope = PartioEndpointRuntime.Use(endpointId);
                     using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                     await Inference.GenerateResponseStreamingAsync(
                         messages, model, maxTokens, temperature, topP,

@@ -80,6 +80,23 @@ namespace Test.Automated
                 AssertHelper.IsTrue(toolNames.Count >= 170, "tools/list should publish every AssistantHub tool (found " + toolNames.Count + ")");
             }).ConfigureAwait(false);
 
+            await ExecuteTestAsync("MCP.Endpoints: reveal is unavailable and endpoint paths cannot be injected", async () =>
+            {
+                List<string> names = await ListAllToolNamesAsync(host);
+                AssertHelper.IsFalse(names.Exists(name => name.Contains("reveal", StringComparison.OrdinalIgnoreCase)), "no reveal tools");
+                foreach (string id in new[] { "cep_test/reveal", "cep_test%2freveal", "../configuration" })
+                {
+                    McpToolCallTextResult result = await host.Client.CallAsync<McpToolCallTextResult>("tools/call", new { name = "completionendpoint_get", arguments = new { endpointId = id } });
+                    AssertHelper.IsTrue(result.IsError == true, "invalid endpoint identifier rejected");
+                }
+                var assembly = System.Reflection.Assembly.LoadFrom(host.McpAssemblyPath);
+                var type = assembly.GetType("AssistantHub.McpServer.Classes.AssistantHubMcpRedactor");
+                var redactor = Activator.CreateInstance(type);
+                string masked = (string)type.GetMethod("RedactJson").Invoke(redactor, new object[] { """{"ProviderSettings":{"Bedrock":{"SecretAccessKey":"dummy-secret","SessionToken":"dummy-token"},"VertexAI":{"ServiceAccountJson":"dummy-json"}}}""" });
+                AssertHelper.IsFalse(masked.Contains("dummy-"), "nested provider secrets redacted");
+                AssertHelper.StringContains(masked, "[REDACTED]", "redaction marker");
+            }).ConfigureAwait(false);
+
             await ExecuteTestAsync("MCP.Protocol.BareToolMethod.Rejected", async () =>
             {
                 JsonRpcResponse response = await host.Client.CallAsync("system_health", new { }).ConfigureAwait(false);

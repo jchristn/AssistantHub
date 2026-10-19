@@ -2861,8 +2861,9 @@ namespace AssistantHub.Server.Services
             string normalizedFormat = NormalizeToolCallingApiFormat(endpoint.Value.ToolCallingApiFormat);
             bool supported = provider switch
             {
-                Enums.InferenceProviderEnum.OpenAI or Enums.InferenceProviderEnum.xAI => normalizedFormat == "openaichatcompletions" || normalizedFormat == "openai",
+                Enums.InferenceProviderEnum.OpenAI or Enums.InferenceProviderEnum.xAI or Enums.InferenceProviderEnum.vLLM => normalizedFormat == "openaichatcompletions" || normalizedFormat == "openai",
                 Enums.InferenceProviderEnum.Ollama or Enums.InferenceProviderEnum.OllamaCloud => normalizedFormat == "ollamachat" || normalizedFormat == "ollama",
+                Enums.InferenceProviderEnum.AzureOpenAI or Enums.InferenceProviderEnum.Anthropic or Enums.InferenceProviderEnum.Cohere or Enums.InferenceProviderEnum.Bedrock or Enums.InferenceProviderEnum.VertexAI or Enums.InferenceProviderEnum.Gemini => normalizedFormat == "native",
                 _ => false
             };
 

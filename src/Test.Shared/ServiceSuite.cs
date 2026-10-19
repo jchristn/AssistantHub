@@ -33,6 +33,7 @@ namespace Test.Automated
         {
             ClearResults();
             await RunCloudProviderTestsAsync().ConfigureAwait(false);
+            await RunPartioProviderTestsAsync().ConfigureAwait(false);
 
             await ExecuteTestAsync("AssistantToolPolicyResolver.Resolve: disabled policy exposes no runtime tools by default", async () =>
             {

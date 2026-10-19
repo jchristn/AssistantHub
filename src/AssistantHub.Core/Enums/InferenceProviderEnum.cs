@@ -33,6 +33,24 @@ namespace AssistantHub.Core.Enums
 
         /// <summary>xAI Grok using OpenAI-compatible chat completions.</summary>
         [EnumMember(Value = "xAI")]
-        xAI
+        xAI,
+        /// <summary>vLLM completion provider.</summary>
+        [EnumMember(Value = "vLLM" )]
+        vLLM,
+        /// <summary>AzureOpenAI completion provider.</summary>
+        [EnumMember(Value = "AzureOpenAI" )]
+        AzureOpenAI,
+        /// <summary>Anthropic completion provider.</summary>
+        [EnumMember(Value = "Anthropic" )]
+        Anthropic,
+        /// <summary>Cohere completion provider.</summary>
+        [EnumMember(Value = "Cohere" )]
+        Cohere,
+        /// <summary>Bedrock completion provider.</summary>
+        [EnumMember(Value = "Bedrock" )]
+        Bedrock,
+        /// <summary>VertexAI completion provider.</summary>
+        [EnumMember(Value = "VertexAI" )]
+        VertexAI
     }
 }

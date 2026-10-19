@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Generic, Optional, TypeVar
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .enums import (
     ApiError,
@@ -1417,6 +1417,18 @@ class FeedbackRequest(BaseModel):
 class PartioEndpointConfig(BaseModel):
     """An embedding or completion endpoint configuration."""
 
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_partio_fields(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        aliases = {str(field.alias or name).lower(): name for name, field in cls.model_fields.items()}
+        aliases.update({name.lower(): name for name in cls.model_fields})
+        return {aliases.get(str(key).lower(), key): item for key, item in value.items()}
+
+
     id: Optional[str] = None
     name: Optional[str] = None
     model: Optional[str] = None
@@ -1424,6 +1436,14 @@ class PartioEndpointConfig(BaseModel):
     endpoint: Optional[str] = None
     api_format: Optional[str] = Field(None, alias="apiFormat")
     api_key: Optional[str] = Field(None, alias="apiKey")
+    context_size: Optional[int] = Field(None, alias="ContextSize")
+    tokenization: Optional[dict[str, Any]] = Field(None, alias="Tokenization")
+    provider_settings: Optional[dict[str, Any]] = Field(None, alias="ProviderSettings", validation_alias=AliasChoices("ProviderSettings", "providerSettings", "provider_settings"))
+    created_utc: Optional[datetime] = Field(None, alias="CreatedUtc")
+    last_update_utc: Optional[datetime] = Field(None, alias="LastUpdateUtc")
+    labels: Optional[list[str]] = None
+    tags: Optional[dict[str, str]] = None
+    enable_request_history: Optional[bool] = Field(None, alias="EnableRequestHistory")
     active: bool = True
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
     max_queue_depth: int = Field(0, alias="maxQueueDepth", validation_alias=AliasChoices("MaxQueueDepth", "maxQueueDepth", "max_queue_depth"))
@@ -1454,12 +1474,27 @@ class PartioEndpointConfig(BaseModel):
 class PartioEndpointRequest(BaseModel):
     """Request body for creating/updating an endpoint."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_partio_fields(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        aliases = {str(field.alias or name).lower(): name for name, field in cls.model_fields.items()}
+        aliases.update({name.lower(): name for name in cls.model_fields})
+        return {aliases.get(str(key).lower(), key): item for key, item in value.items()}
+
+
     tenant_id: Optional[str] = Field(None, alias="tenantId")
     name: Optional[str] = None
     model: Optional[str] = None
     endpoint: Optional[str] = None
     api_format: Optional[str] = Field(None, alias="apiFormat")
     api_key: Optional[str] = Field(None, alias="apiKey")
+    context_size: Optional[int] = Field(None, alias="ContextSize")
+    tokenization: Optional[dict[str, Any]] = Field(None, alias="Tokenization")
+    provider_settings: Optional[dict[str, Any]] = Field(None, alias="ProviderSettings", validation_alias=AliasChoices("ProviderSettings", "providerSettings", "provider_settings"))
     active: bool = True
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
     max_queue_depth: int = Field(0, alias="maxQueueDepth", validation_alias=AliasChoices("MaxQueueDepth", "maxQueueDepth", "max_queue_depth"))

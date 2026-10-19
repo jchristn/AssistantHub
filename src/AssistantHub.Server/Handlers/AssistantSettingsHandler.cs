@@ -918,8 +918,9 @@ namespace AssistantHub.Server.Handlers
             string format = NormalizeToolCallingApiFormat(endpoint.ToolCallingApiFormat);
             return provider switch
             {
-                Enums.InferenceProviderEnum.OpenAI or Enums.InferenceProviderEnum.xAI => format == "openaichatcompletions" || format == "openai",
+                Enums.InferenceProviderEnum.OpenAI or Enums.InferenceProviderEnum.xAI or Enums.InferenceProviderEnum.vLLM => format == "openaichatcompletions" || format == "openai",
                 Enums.InferenceProviderEnum.Ollama or Enums.InferenceProviderEnum.OllamaCloud => format == "ollamachat" || format == "ollama",
+                Enums.InferenceProviderEnum.AzureOpenAI or Enums.InferenceProviderEnum.Anthropic or Enums.InferenceProviderEnum.Cohere or Enums.InferenceProviderEnum.Bedrock or Enums.InferenceProviderEnum.VertexAI or Enums.InferenceProviderEnum.Gemini => format == "native",
                 _ => false
             };
         }

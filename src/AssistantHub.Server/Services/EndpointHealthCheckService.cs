@@ -3,6 +3,7 @@ namespace AssistantHub.Server.Services
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Text;
     using System.Text.Json;
@@ -89,6 +90,7 @@ namespace AssistantHub.Server.Services
                 foreach (PartioEndpointConfig ep in envelope.Data)
                 {
                     EndpointConfig config = ParseEndpointConfig(ep);
+                    if (config != null) config.EndpointKind = endpointType;
                     if (config != null && config.HealthCheckEnabled && config.Active)
                     {
                         StartLoop(config);
@@ -107,7 +109,7 @@ namespace AssistantHub.Server.Services
         /// <summary>
         /// Called when a new endpoint is created. Parse the Partio response JSON and start monitoring if applicable.
         /// </summary>
-        public void OnEndpointCreated(string responseJson)
+        public void OnEndpointCreated(string responseJson, string endpointKind = "embedding")
         {
             if (string.IsNullOrEmpty(responseJson)) return;
 
@@ -116,6 +118,7 @@ namespace AssistantHub.Server.Services
                 PartioEndpointConfig? endpoint =
                     JsonSerializer.Deserialize<PartioEndpointConfig>(responseJson, _JsonOptions);
                 EndpointConfig config = ParseEndpointConfig(endpoint);
+                if (config != null) config.EndpointKind = endpointKind;
                 if (config != null && config.HealthCheckEnabled && config.Active)
                 {
                     StartLoop(config);
@@ -130,7 +133,7 @@ namespace AssistantHub.Server.Services
         /// <summary>
         /// Called when an endpoint is updated. Parse the Partio response JSON, stop existing loop, and restart if applicable.
         /// </summary>
-        public void OnEndpointUpdated(string responseJson)
+        public void OnEndpointUpdated(string responseJson, string endpointKind = "embedding")
         {
             if (string.IsNullOrEmpty(responseJson)) return;
 
@@ -139,6 +142,7 @@ namespace AssistantHub.Server.Services
                 PartioEndpointConfig? endpoint =
                     JsonSerializer.Deserialize<PartioEndpointConfig>(responseJson, _JsonOptions);
                 EndpointConfig config = ParseEndpointConfig(endpoint);
+                if (config != null) config.EndpointKind = endpointKind;
                 if (config == null) return;
 
                 StopLoop(config.Id);
@@ -286,6 +290,19 @@ namespace AssistantHub.Server.Services
 
         private async Task<bool> PerformCheckAsync(EndpointConfig config, CancellationToken token)
         {
+            if (config.DelegateHealth)
+            {
+                using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+                deadline.CancelAfter(config.HealthCheckTimeoutMs);
+                using HttpResponseMessage healthResponse = await _ChunkingService.SendAsync(HttpMethod.Get,
+                    "/v1.0/endpoints/" + config.EndpointKind + "/" + Uri.EscapeDataString(config.Id) + "/health", null, deadline.Token).ConfigureAwait(false);
+                healthResponse.EnsureSuccessStatusCode();
+                using JsonDocument health = JsonDocument.Parse(await healthResponse.Content.ReadAsStringAsync(deadline.Token).ConfigureAwait(false));
+                bool healthy = health.RootElement.GetProperty("IsHealthy").GetBoolean();
+                if (!healthy && health.RootElement.TryGetProperty("LastError", out JsonElement lastError) && lastError.ValueKind == JsonValueKind.String)
+                    throw new InvalidOperationException(lastError.GetString());
+                return healthy;
+            }
             string url = !string.IsNullOrEmpty(config.HealthCheckUrl)
                 ? config.HealthCheckUrl
                 : config.Endpoint;
@@ -404,6 +421,8 @@ namespace AssistantHub.Server.Services
                     Endpoint = endpoint.Endpoint ?? string.Empty,
                     ApiFormat = endpoint.ApiFormat ?? string.Empty,
                     ApiKey = endpoint.ApiKey,
+                    DelegateHealth = endpoint.ProviderSettings != null || endpoint.ApiKey?.StartsWith("****") == true
+                        || !new[] { "Ollama", "OllamaCloud", "OpenAI", "Gemini", "xAI", "vLLM" }.Contains(endpoint.ApiFormat),
                     Active = endpoint.Active,
                     HealthCheckEnabled = endpoint.HealthCheckEnabled,
                     HealthCheckUrl = endpoint.HealthCheckUrl,
@@ -418,6 +437,7 @@ namespace AssistantHub.Server.Services
 
                 if (string.IsNullOrEmpty(config.Id)) return null;
 
+                if (config.DelegateHealth) { config.HealthyThreshold = 1; config.UnhealthyThreshold = 1; }
                 return config;
             }
             catch (Exception ex)

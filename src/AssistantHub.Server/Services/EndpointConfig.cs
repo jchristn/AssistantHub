@@ -17,6 +17,8 @@ namespace AssistantHub.Server.Services
     /// </summary>
     internal class EndpointConfig
     {
+        public string EndpointKind { get; set; } = "embedding";
+        public bool DelegateHealth { get; set; }
         public string Id { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
         public string TenantId { get; set; } = "default";

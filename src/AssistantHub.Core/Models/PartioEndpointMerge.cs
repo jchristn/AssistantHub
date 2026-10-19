@@ -57,7 +57,12 @@ namespace AssistantHub.Core.Models
                 if (EqualsIgnoreCase(name, "Tags") || EqualsIgnoreCase(name, "Labels")) continue;
                 if (IsToolField(name)) continue; // folded into tags/labels below
                 if (PartioEndpointTimeouts.FieldNames.Any(n => EqualsIgnoreCase(n, name))) continue; // folded into tags below
-                if (EqualsIgnoreCase(name, "ApiKey") && IsBlank(prop.Value)) continue; // blank key preserves stored key
+                if (EqualsIgnoreCase(name, "ApiKey") && prop.Value != null && IsBlank(prop.Value)) continue; // blank key preserves stored key
+                if (EqualsIgnoreCase(name, "ProviderSettings") && prop.Value is JsonObject providerSettings)
+                {
+                    SetProperty(baseObj, name, MergeSettings(GetObject(baseObj, name), providerSettings));
+                    continue;
+                }
                 SetProperty(baseObj, name, prop.Value?.DeepClone());
             }
 
@@ -74,6 +79,15 @@ namespace AssistantHub.Core.Models
                 SetProperty(baseObj, "TenantId", JsonValue.Create(defaultTenantId));
 
             return baseObj.ToJsonString();
+        }
+
+        private static JsonObject MergeSettings(JsonObject current, JsonObject incoming)
+        {
+            JsonObject merged = current?.DeepClone() as JsonObject ?? new JsonObject();
+            foreach (KeyValuePair<string, JsonNode?> entry in incoming)
+                SetProperty(merged, entry.Key, entry.Value is JsonObject section
+                    ? MergeSettings(GetObject(merged, entry.Key), section) : entry.Value?.DeepClone());
+            return merged;
         }
 
         private static void FoldToolFields(JsonObject incoming, JsonObject tags, JsonArray labels)

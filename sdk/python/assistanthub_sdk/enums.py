@@ -92,6 +92,31 @@ class InferenceProvider(str, Enum):
     GEMINI = "Gemini"
     OLLAMA_CLOUD = "OllamaCloud"
     XAI = "xAI"
+    VLLM = "vLLM"
+    AZUREOPENAI = "AzureOpenAI"
+    ANTHROPIC = "Anthropic"
+    COHERE = "Cohere"
+    BEDROCK = "Bedrock"
+    VERTEXAI = "VertexAI"
+
+
+
+class ApiFormat(str, Enum):
+    """Partio endpoint wire formats (Anthropic completion only; TEI/VoyageAI embeddings only)."""
+
+    OLLAMA = "Ollama"
+    OLLAMA_CLOUD = "OllamaCloud"
+    OPENAI = "OpenAI"
+    VLLM = "vLLM"
+    GEMINI = "Gemini"
+    XAI = "xAI"
+    AZURE_OPENAI = "AzureOpenAI"
+    ANTHROPIC = "Anthropic"
+    COHERE = "Cohere"
+    BEDROCK = "Bedrock"
+    VERTEX_AI = "VertexAI"
+    TEI = "TEI"
+    VOYAGE_AI = "VoyageAI"
 
 
 class RepositoryType(str, Enum):

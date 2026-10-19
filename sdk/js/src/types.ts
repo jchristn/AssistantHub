@@ -42,6 +42,13 @@ export const InferenceProvider = {
   Gemini: "Gemini",
   OllamaCloud: "OllamaCloud",
   xAI: "xAI",
+  vLLM: "vLLM",
+  AzureOpenAI: "AzureOpenAI",
+  Anthropic: "Anthropic",
+  Cohere: "Cohere",
+  Bedrock: "Bedrock",
+  VertexAI: "VertexAI",
+
 } as const;
 export type InferenceProvider = (typeof InferenceProvider)[keyof typeof InferenceProvider];
 
@@ -137,10 +144,19 @@ export type EnumerationOrder = (typeof EnumerationOrder)[keyof typeof Enumeratio
 
 /** API format string for endpoint configuration. */
 export const ApiFormat = {
+  TEI: "TEI",
+  VoyageAI: "VoyageAI",
   OpenAI: "OpenAI",
   Gemini: "Gemini",
   OllamaCloud: "OllamaCloud",
   xAI: "xAI",
+  vLLM: "vLLM",
+  AzureOpenAI: "AzureOpenAI",
+  Anthropic: "Anthropic",
+  Cohere: "Cohere",
+  Bedrock: "Bedrock",
+  VertexAI: "VertexAI",
+
   Ollama: "Ollama",
 } as const;
 export type ApiFormat = (typeof ApiFormat)[keyof typeof ApiFormat];
@@ -1177,7 +1193,10 @@ export interface PartioEndpointRequest {
   Model?: string;
   Endpoint?: string;
   ApiFormat?: ApiFormat;
-  ApiKey?: string;
+  ApiKey?: string | null;
+  ProviderSettings?: ProviderSettings | null;
+  ContextSize?: number;
+  Tokenization?: Record<string, unknown> | null;
   Active?: boolean;
   MaxConcurrentRequests?: number;
   /** Maximum requests Partio queues once the concurrency limit is reached. 0 rejects with 429 immediately; a queued request that times out returns 504. */
@@ -1214,7 +1233,10 @@ export interface PartioEndpointConfig {
   TenantId?: string;
   Endpoint?: string;
   ApiFormat?: string;
-  ApiKey?: string;
+  ApiKey?: string | null;
+  ProviderSettings?: ProviderSettings | null;
+  ContextSize?: number;
+  Tokenization?: Record<string, unknown> | null;
   Active?: boolean;
   MaxConcurrentRequests?: number;
   /** Maximum requests Partio queues once the concurrency limit is reached. 0 rejects with 429 immediately; a queued request that times out returns 504. */
@@ -1477,4 +1499,15 @@ export interface AssistantHubClientOptions {
   tenantId?: string;
   /** Optional custom fetch implementation. */
   fetch?: typeof globalThis.fetch;
+}
+
+/** Provider-specific Partio endpoint settings. Unrelated sections are dropped by Partio on save. */
+export interface ProviderSettings {
+  Auth?: { Mode: 'None' | 'Bearer' | 'Header' | 'QueryParameter' | 'Basic'; HeaderName?: string | null; QueryParameterName?: string | null; Username?: string | null } | null;
+  AzureOpenAI?: { ApiVersion?: string | null; AuthMode?: 'ApiKey' | 'BearerToken' } | null;
+  Anthropic?: { AnthropicVersion?: string | null; WorkspaceId?: string | null } | null;
+  Bedrock?: { Region?: string; CredentialSource?: 'Static' | 'Environment'; AccessKeyId?: string | null; SecretAccessKey?: string | null; SessionToken?: string | null } | null;
+  VertexAI?: { ProjectId?: string; Region?: string; CredentialSource?: 'ServiceAccountJson' | 'ApplicationDefault' | 'AccessToken'; ServiceAccountJson?: string | null } | null;
+  Cohere?: { InputType?: string | null } | null;
+  VoyageAI?: { InputType?: string | null; OutputDimension?: number | null } | null;
 }

@@ -1,22 +1,28 @@
 # AssistantHub MCP API Reference
 
-### Ollama Cloud and Grok / xAI endpoints
+### Partio endpoint providers and authentication
 
-The setup wizard, embedding/completion endpoint forms, system inference settings, REST API, MCP management tools, and C#, JavaScript/TypeScript, and Python SDKs accept `OllamaCloud` and `xAI`. Supply your provider API key and a model available to your account. Embedding availability depends on the provider and model; no embedding model is assumed for either cloud provider.
+Endpoint management, the setup wizard, dashboard forms, REST/OpenAPI, MCP tools, and all SDKs preserve Partio's `ProviderSettings` contract. Completion providers are `Ollama`, `OllamaCloud`, `OpenAI`, `vLLM`, `Gemini`, `xAI`, `AzureOpenAI`, `Anthropic`, `Cohere`, `Bedrock`, and `VertexAI`. Embeddings support the same providers except `Anthropic`, plus `TEI` and `VoyageAI`. Model availability depends on the provider and account.
 
-| Format / Provider | Endpoint | Health check | Tool calling format |
-| --- | --- | --- | --- |
-| `OllamaCloud` | `https://ollama.com` (fixed by Partio) | `/api/tags`, bearer auth | `OllamaChat` |
-| `xAI` (Grok) | `https://api.x.ai` (`/v1` suffix also accepted) | `/v1/models`, bearer auth | `OpenAIChatCompletions` |
+Set `ApiFormat`, `Model`, `Endpoint`, and the applicable settings below. System inference uses `Inference.Provider`, `Inference.DefaultModel`, and `Inference.ProviderSettings` with the same connection settings. Ollama Cloud uses the fixed `https://ollama.com` endpoint and a Bearer Token; xAI defaults to `https://api.x.ai`. Cloud model pull/delete are unsupported. New completion providers use PolyPrompt 3.4.0 for full message history, streaming, and native tools. Declare `SupportsToolCalling` and `ToolCallingApiFormat: "Native"` for Azure OpenAI, Anthropic, Gemini, Cohere, Bedrock, and Vertex AI; local Ollama/Ollama Cloud use `OllamaChat`, and OpenAI/vLLM/xAI use `OpenAIChatCompletions`. The assistant's tool policy still controls tool access. Azure OpenAI, Anthropic, Cohere, Bedrock, and Vertex AI model listing returns the configured model rather than an account catalog.
 
-Set `ApiFormat` on managed endpoints, or `Inference.Provider` in system configuration. Set `ApiKey`, `Model` (or `Inference.DefaultModel`), and `Endpoint`. Enable `HealthCheckUseAuth` for managed cloud endpoint health checks. Tool calling requires the endpoint's explicit `SupportsToolCalling` capability and the assistant's tool policy. AssistantHub chat uses native Ollama for Ollama Cloud and xAI's OpenAI-compatible chat-completions API, including streaming. Model listing is authenticated; model pull/delete remain local-Ollama-only.
+| ProviderSettings section | Fields and authentication |
+| --- | --- |
+| `Auth` (Ollama, vLLM, TEI, OpenAI) | `Mode`: `None`, `Bearer`, `Header`, `QueryParameter`, or `Basic`. Credential in `ApiKey`; `HeaderName`, `QueryParameterName`, or `Username` as applicable. Omitted Auth preserves legacy bearer behavior; `None` clears stored credentials. |
+| `AzureOpenAI` | `ApiVersion`, `AuthMode`: `ApiKey` or `BearerToken`. `Model` is the deployment name; `Endpoint` is the resource URL. Credential in `ApiKey`. |
+| `Anthropic` | `AnthropicVersion`, optional `WorkspaceId`; `ApiKey` authenticates with `x-api-key`. |
+| `Bedrock` | `Region`, `CredentialSource`: `Static` or `Environment`; static credentials use `AccessKeyId`, `SecretAccessKey`, optional `SessionToken`. AWS SigV4; no top-level ApiKey. |
+| `VertexAI` | `ProjectId`, `Region`, `CredentialSource`: `ServiceAccountJson`, `ApplicationDefault`, or `AccessToken`. Service account JSON in `ServiceAccountJson`; access token in `ApiKey`. |
+| `Cohere` | Embedding `InputType`. Credential in `ApiKey`. |
+| `VoyageAI` | Embedding `InputType`, optional `OutputDimension`. Credential in `ApiKey`. |
 
-The Compose stack pins Partio server/dashboard to **v0.5.1**, which provides the **PolyPrompt 3.4.0** provider clients used for managed embeddings and completions. AssistantHub has no direct PolyPrompt package dependency.
+Bedrock and Vertex AI derive their URL from the region unless overridden. Bedrock, Vertex AI, Cohere, and Voyage AI use Partio's provider connectivity probes; generic health URL/method fields do not control these probes. AssistantHub delegates health checks with provider settings or masked credentials to Partio, using the same authentication as inference. Environment/ADC credentials must exist in both Partio (embeddings, probes, smoke tests) and AssistantHub server (chat).
+
+Normal endpoint create/read/update/enumerate responses mask `ApiKey`, Bedrock `SecretAccessKey`/`SessionToken`, and Vertex AI `ServiceAccountJson`. Editing preserves masked values; explicit `null` clears a credential. AssistantHub merges partial updates recursively, preserving omitted nested fields and unknown settings. A blank top-level ApiKey also preserves the stored key. Explicitly use the admin-only `GET /v1.0/endpoints/{embedding|completion}/{endpointId}/reveal` routes to reveal credentials; Partio audits these reads. The dashboard reveals only on request and reveals source credentials when duplicating an endpoint. MCP never exposes a reveal tool and redacts nested credentials from tool results. Inference internally resolves credentials through Partio's reveal route, so `Chunking.AccessKey` must grant the necessary Partio administrator access. Older Partio instances without masking/reveal retain their legacy read behavior; a denied reveal never falls back to a less privileged read.
+
+The Compose stack pins Partio server/dashboard to **v0.5.2**. Use a Partio build containing the provider/authentication changes described above; rebuilding AssistantHub does not update an independently deployed Partio service. Refresh the configured service at `Chunking.Endpoint` when upgrading. AssistantHub directly references PolyPrompt **3.4.0** for native completion adapters.
 
 
-`AssistantHub.McpServer` is a standalone Voltaic-based MCP server that exposes the AssistantHub management and configuration surface as MCP tools. It connects to an upstream AssistantHub REST server with the C# SDK and uses a small REST proxy for exact REST pass-through cases such as configuration replacement, binary download wrappers, and HEAD-style existence checks.
-
-This document is the source of truth for the MCP surface. For the underlying HTTP API, see [REST_API.md](REST_API.md). For Claude/Cursor setup guidance, see [docs/CLAUDE_MCP.md](docs/CLAUDE_MCP.md).
 
 ## Transports
 

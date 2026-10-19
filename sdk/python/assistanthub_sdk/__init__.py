@@ -2,6 +2,7 @@
 
 from .enums import (
     ApiError,
+    ApiFormat,
     CrawlOperationState,
     CrawlPlanState,
     DatabaseType,
@@ -144,6 +145,7 @@ from .client import AssistantHubClient
 __all__ = [
     # Enums
     "ApiError",
+    "ApiFormat",
     "CrawlOperationState",
     "CrawlPlanState",
     "DatabaseType",

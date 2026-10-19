@@ -1,3 +1,6 @@
+import ProviderPicker from './ProviderPicker';
+import ProviderConnectionFields from './ProviderConnectionFields';
+import { applyProviderChange, buildConnectionPayload, validateConnection } from '../utils/providers';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -74,6 +77,7 @@ function SetupWizard({ onClose }) {
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const setEndpointField = (field, value) => {
+    if (field === 'ApiFormat') { setForm(previous => applyProviderChange(previous, value, step === 0 ? 'embedding' : 'completion', false)); return; }
     setForm(prev => {
       const updated = { ...prev, [field]: value };
 
@@ -310,9 +314,11 @@ function SetupWizard({ onClose }) {
   };
 
   const handleCreate = async () => {
-    if ((step === 0 || step === 1) && ['OllamaCloud', 'xAI'].includes(form.ApiFormat) && !form.ApiKey?.trim()) {
-      setError('An API key is required for this cloud provider.');
-      return;
+    let connection;
+    if (step === 0 || step === 1) {
+      const errors = validateConnection(form, step === 0 ? 'embedding' : 'completion');
+      if (Object.keys(errors).length) { setError(Object.values(errors)[0]); return; }
+      connection = buildConnectionPayload(form);
     }
     setSaving(true);
     setError('');
@@ -323,10 +329,11 @@ function SetupWizard({ onClose }) {
           {
             const defaults = getApiFormatDefaults(form.ApiFormat || 'Ollama', form.Endpoint || getDefaultEndpoint(form.ApiFormat || 'Ollama'));
           result = await api.createEmbeddingEndpoint({
-            Model: form.Model || '',
-            Endpoint: form.Endpoint || defaults.Endpoint,
-            ApiFormat: form.ApiFormat || 'Ollama',
-            ApiKey: form.ApiKey || '',
+            ...connection,
+            Model: connection.Model,
+            Endpoint: connection.Endpoint,
+            ApiFormat: connection.ApiFormat,
+            ApiKey: connection.ApiKey,
             HealthCheckEnabled: form.HealthCheckEnabled ?? defaults.HealthCheckEnabled,
             HealthCheckUrl: form.HealthCheckUrl || defaults.HealthCheckUrl,
             HealthCheckMethod: form.HealthCheckMethod || defaults.HealthCheckMethod,
@@ -345,10 +352,11 @@ function SetupWizard({ onClose }) {
             const defaults = getApiFormatDefaults(form.ApiFormat || 'Ollama', form.Endpoint || getDefaultEndpoint(form.ApiFormat || 'Ollama'));
           result = await api.createCompletionEndpoint({
             Name: form.Name || '',
-            Model: form.Model || '',
-            Endpoint: form.Endpoint || defaults.Endpoint,
-            ApiFormat: form.ApiFormat || 'Ollama',
-            ApiKey: form.ApiKey || '',
+            ...connection,
+            Model: connection.Model,
+            Endpoint: connection.Endpoint,
+            ApiFormat: connection.ApiFormat,
+            ApiKey: connection.ApiKey,
             HealthCheckEnabled: form.HealthCheckEnabled ?? defaults.HealthCheckEnabled,
             HealthCheckUrl: form.HealthCheckUrl || defaults.HealthCheckUrl,
             HealthCheckMethod: form.HealthCheckMethod || defaults.HealthCheckMethod,
@@ -520,63 +528,12 @@ function SetupWizard({ onClose }) {
   const renderGenericForm = () => {
     switch (step) {
       case 0: // Embedding Endpoint
-        return (
-          <div className="wizard-step-form">
-            <div className="form-group">
-              <label>Model</label>
-              <input type="text" value={form.Model || ''} onChange={e => setField('Model', e.target.value)} placeholder="e.g. nomic-embed-text" />
-            </div>
-            <div className="form-group">
-              <label>Endpoint</label>
-              <input type="text" value={form.Endpoint || ''} onChange={e => setEndpointField('Endpoint', e.target.value)} placeholder="e.g. http://localhost:11434" />
-            </div>
-            <div className="form-group">
-              <label>API Format</label>
-              <select value={form.ApiFormat || 'Ollama'} onChange={e => setEndpointField('ApiFormat', e.target.value)}>
-                <option value="Ollama">Ollama</option>
-                <option value="OpenAI">OpenAI</option>
-                <option value="OllamaCloud">Ollama Cloud</option>
-                <option value="xAI">Grok / xAI</option>
-                <option value="Gemini">Gemini</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>API Key {['OllamaCloud', 'xAI'].includes(form.ApiFormat) ? '(required)' : '(optional)'}</label>
-              <PasswordInput value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
-            </div>
-          </div>
-        );
       case 1: // Inference Endpoint
-        return (
-          <div className="wizard-step-form">
-            <div className="form-group">
-              <label>Name</label>
-              <input type="text" value={form.Name || ''} onChange={e => setField('Name', e.target.value)} placeholder="e.g. Local Ollama" />
-            </div>
-            <div className="form-group">
-              <label>Model</label>
-              <input type="text" value={form.Model || ''} onChange={e => setField('Model', e.target.value)} placeholder="e.g. gemma3:4b" />
-            </div>
-            <div className="form-group">
-              <label>Endpoint</label>
-              <input type="text" value={form.Endpoint || ''} onChange={e => setEndpointField('Endpoint', e.target.value)} placeholder="e.g. http://localhost:11434" />
-            </div>
-            <div className="form-group">
-              <label>API Format</label>
-              <select value={form.ApiFormat || 'Ollama'} onChange={e => setEndpointField('ApiFormat', e.target.value)}>
-                <option value="Ollama">Ollama</option>
-                <option value="OpenAI">OpenAI</option>
-                <option value="OllamaCloud">Ollama Cloud</option>
-                <option value="xAI">Grok / xAI</option>
-                <option value="Gemini">Gemini</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>API Key {['OllamaCloud', 'xAI'].includes(form.ApiFormat) ? '(required)' : '(optional)'}</label>
-              <PasswordInput value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
-            </div>
-          </div>
-        );
+        return <div className="wizard-step-form">
+          {step === 1 && <div className="form-group"><label>Name</label><input value={form.Name || ''} onChange={event => setField('Name', event.target.value)} /></div>}
+          <ProviderPicker kind={step === 0 ? 'embedding' : 'completion'} value={form.ApiFormat || 'Ollama'} onChange={value => setEndpointField('ApiFormat', value)} />
+          <ProviderConnectionFields kind={step === 0 ? 'embedding' : 'completion'} form={form} setForm={setForm} healthFieldsEdited={false} />
+        </div>;
       case 2: // Storage Bucket
         return (
           <div className="wizard-step-form">

@@ -703,3 +703,9 @@ The SDK uses `System.Text.Json` with the following defaults:
 
 - .NET 8.0 or later
 - `System.Text.Json` 8.0.5 (included as a package dependency)
+
+## Partio provider settings
+
+Endpoint create/update accepts nested `ProviderSettings` for selectable authentication, Azure OpenAI, Anthropic, Bedrock, Vertex AI, Cohere and Voyage AI. See [the provider contract](../../REST_API.md#partio-endpoint-providers-and-authentication). Normal responses mask credentials; submit the masked value to preserve it, or null to clear. Omitted nested fields are preserved on update. Use `RevealEmbeddingEndpointAsync` / `RevealCompletionEndpointAsync` for an explicit administrator credential reveal, audited by Partio. Keep reveal results out of logs.
+
+Use the dictionary overload of `UpdateEmbeddingEndpointAsync` / `UpdateCompletionEndpointAsync` for a partial update or an explicit null credential clear. Typed models omit null properties.

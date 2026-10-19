@@ -328,6 +328,7 @@ namespace AssistantHub.Server.Handlers
                 Provider = Settings.Inference.Provider,
                 Endpoint = Settings.Inference.Endpoint,
                 ApiKey = Settings.Inference.ApiKey,
+                ProviderSettings = Settings.Inference.ProviderSettings,
                 DefaultModel = Settings.Inference.DefaultModel
             };
 
@@ -335,9 +336,7 @@ namespace AssistantHub.Server.Handlers
             {
                 try
                 {
-                    using (HttpResponseMessage response = await InferenceEndpoints.SendAsync(
-                        System.Net.Http.HttpMethod.Get,
-                        "/v1.0/endpoints/completion/" + assistantSettings.InferenceEndpointId).ConfigureAwait(false))
+                    using (HttpResponseMessage response = await PartioEndpointRuntime.ReadAsync(InferenceEndpoints, assistantSettings.InferenceEndpointId).ConfigureAwait(false))
                     {
                         if (response.IsSuccessStatusCode)
                         {
@@ -345,6 +344,8 @@ namespace AssistantHub.Server.Handlers
                             JsonSerializerOptions jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
                             PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, jsonOpts);
 
+                            tempSettings.ProviderSettings = ep?.ProviderSettings;
+                            tempSettings.ApiKey = ep?.ApiKey;
                             tempSettings.Provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, tempSettings.Provider);
 
                             if (!String.IsNullOrEmpty(ep?.Endpoint)) tempSettings.Endpoint = ep.Endpoint;

@@ -471,3 +471,7 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 ## License
 
 MIT
+
+## Partio provider settings
+
+Endpoint create/update accepts nested `ProviderSettings` for selectable authentication, Azure OpenAI, Anthropic, Bedrock, Vertex AI, Cohere and Voyage AI. See [the provider contract](../../REST_API.md#partio-endpoint-providers-and-authentication). Normal responses mask credentials; submit the masked value to preserve it, or null to clear. Omitted nested fields are preserved on update. Use `revealEmbeddingEndpoint` / `revealCompletionEndpoint` for an explicit administrator credential reveal, audited by Partio. Keep reveal results out of logs.

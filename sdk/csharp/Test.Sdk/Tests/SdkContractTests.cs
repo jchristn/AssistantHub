@@ -24,6 +24,31 @@ namespace Test.Sdk.Tests
         /// <param name="token">Cancellation token.</param>
         public static async Task RunAsync(TestRunner runner, CancellationToken token)
         {
+            await runner.RunTestAsync("SDK contract: Partio provider settings, partial null clear and reveal routes", async (CancellationToken ct) =>
+            {
+                string body = null;
+                var handler = new RecordingHttpMessageHandler(request =>
+                {
+                    if (request.Content != null) body = request.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                    return JsonResponse("""{"Id":"cep_test","ApiFormat":"Bedrock","ProviderSettings":{"Bedrock":{"Region":"us-east-1","SecretAccessKey":"****last"}}}""");
+                });
+                using HttpClient http = new(handler);
+                using AssistantHubClient client = new("http://localhost", http, "test-key");
+                var patch = new Dictionary<string, object> { ["ApiKey"] = null, ["ProviderSettings"] = new Dictionary<string, object> { ["Bedrock"] = new Dictionary<string, object> { ["SessionToken"] = null } } };
+                CompletionEndpoint endpoint = await client.UpdateCompletionEndpointAsync("cep_test", patch, ct);
+                AssertHelper.AreEqual("****last", endpoint.ProviderSettings.Bedrock.SecretAccessKey, "masked nested response");
+                using JsonDocument json = JsonDocument.Parse(body);
+                AssertHelper.AreEqual(JsonValueKind.Null, json.RootElement.GetProperty("ApiKey").ValueKind, "explicit root null");
+                AssertHelper.IsFalse(json.RootElement.TryGetProperty("Active", out _), "partial patch omits defaults");
+                await client.RevealCompletionEndpointAsync("cep_test", ct);
+                await client.RevealEmbeddingEndpointAsync("eep_test", ct);
+                AssertHelper.AreEqual("/v1.0/endpoints/completion/cep_test/reveal", handler.Requests[1].PathAndQuery, "completion reveal");
+                AssertHelper.AreEqual("/v1.0/endpoints/embedding/eep_test/reveal", handler.Requests[2].PathAndQuery, "embedding reveal");
+                using SerializationProbeClient probe = new();
+                string typed = probe.Serialize(new CompletionEndpoint { ProviderSettings = new ProviderSettings { Auth = new EndpointAuthSettings { Mode = EndpointAuthModes.Header, HeaderName = "X-Key" } } });
+                AssertHelper.StringContains(typed, "X-Key", "typed auth serialized");
+            }, token).ConfigureAwait(false);
+
             await runner.RunTestAsync("SDK contract: crawl plan repository settings round-trip for every repository type", async (CancellationToken ct) =>
             {
                 using SerializationProbeClient probe = new SerializationProbeClient();

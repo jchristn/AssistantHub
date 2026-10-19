@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 import PasswordInput from '../PasswordInput';
+import InferenceConnectionFields, { inferenceConnectionForm } from '../InferenceConnectionFields';
+import { validateConnection } from '../../utils/providers';
 import { getDefaultEndpoint } from '../../utils/endpointDefaults';
 
 function ConfigurationFormModal({ api, onSave, onClose }) {
@@ -56,6 +58,8 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateConnection(inferenceConnectionForm(form.Inference), "completion", { editing: true });
+    if (Object.keys(errors).length) { alert(Object.values(errors).join("\n")); return; }
     setSaving(true);
     try {
       await onSave(form);
@@ -218,11 +222,8 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
         </>)}
 
         {renderSection('Inference', 'Inference', <>
-          {renderSelect('Inference', 'Provider', 'Provider', ['Ollama', 'OllamaCloud', 'OpenAI', 'xAI', 'Gemini'], 'Default AI inference provider for the system')}
-          {renderTextField('Inference', 'Endpoint', 'Endpoint', 'text', 'Default inference API endpoint URL')}
+          <InferenceConnectionFields settings={form.Inference} onChange={Inference => setForm(current => ({ ...current, Inference }))} />
           {renderTextField('Inference', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the inference provider dashboard or console')}
-          {renderTextField('Inference', 'ApiKey', 'API Key', 'password', 'Default API key for inference authentication')}
-          {renderTextField('Inference', 'DefaultModel', 'Default Model', 'text', 'Default model name used for inference requests')}
         </>)}
 
         {renderSection('RecallDb', 'RecallDb', <>

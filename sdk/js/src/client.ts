@@ -783,6 +783,11 @@ export class AssistantHubClient {
     return this._request("GET", `/v1.0/endpoints/embedding/${encodeURIComponent(endpointId)}`);
   }
 
+  /** Admin-only audited credential reveal; ordinary reads remain masked. */
+  async revealEmbeddingEndpoint(endpointId: string): Promise<PartioEndpointConfig> {
+    return this._request("GET", `/v1.0/endpoints/embedding/${encodeURIComponent(endpointId)}/reveal`);
+  }
+
   /** Update an embedding endpoint. */
   async updateEmbeddingEndpoint(endpointId: string, config: PartioEndpointConfig): Promise<PartioEndpointConfig> {
     return this._request("PUT", `/v1.0/endpoints/embedding/${encodeURIComponent(endpointId)}`, config);
@@ -830,6 +835,11 @@ export class AssistantHubClient {
   /** Get a completion endpoint by ID. */
   async getCompletionEndpoint(endpointId: string): Promise<PartioEndpointConfig> {
     return this._request("GET", `/v1.0/endpoints/completion/${encodeURIComponent(endpointId)}`);
+  }
+
+  /** Admin-only audited credential reveal; ordinary reads remain masked. */
+  async revealCompletionEndpoint(endpointId: string): Promise<PartioEndpointConfig> {
+    return this._request("GET", `/v1.0/endpoints/completion/${encodeURIComponent(endpointId)}/reveal`);
   }
 
   /** Update a completion endpoint. */

@@ -198,6 +198,51 @@ def local_only_requested() -> bool:
 
 
 def run_sdk_contract_tests(runner: TestRunner) -> None:
+    def test_partio_provider_contract() -> None:
+        from assistanthub_sdk import ApiFormat
+        from assistanthub_sdk.models import PartioEndpointConfig, PartioEndpointRequest
+        assert_equal(13, len(ApiFormat), "all Partio formats")
+        response = PartioEndpointConfig.model_validate({"Id": "cep_test", "ApiFormat": "Bedrock", "ApiKey": "****last", "ContextSize": 8192, "ProviderSettings": {"Bedrock": {"SecretAccessKey": "****last", "Region": "us-east-1"}}})
+        assert_equal("cep_test", response.id, "PascalCase ID")
+        assert_equal("Bedrock", response.api_format, "PascalCase format")
+        assert_equal("****last", response.api_key, "masked credential")
+        request = PartioEndpointRequest(provider_settings={"Bedrock": {"Region": "us-west-2", "SessionToken": None}}, api_key=None)
+        payload = request.model_dump(by_alias=True, exclude_unset=True)
+        assert_equal(None, payload["apiKey"], "explicit null root clear")
+        assert_equal(None, payload["ProviderSettings"]["Bedrock"]["SessionToken"], "nested null clear")
+        assert_false("healthCheckEnabled" in payload, "partial update omits unrelated defaults")
+        for client_class in [AssistantHubClient, AsyncAssistantHubClient]:
+            assert_true(callable(getattr(client_class, "reveal_embedding_endpoint")), "embedding reveal method")
+            assert_true(callable(getattr(client_class, "reveal_completion_endpoint")), "completion reveal method")
+        class FakeResponse:
+            def json(self) -> dict:
+                return {"Id": "cep_test", "ApiFormat": "Bedrock", "ProviderSettings": {"Bedrock": {"SecretAccessKey": "****last"}}}
+        calls = []
+        client = AssistantHubClient("http://localhost", "test-key")
+        def capture(method, path, **kwargs):
+            calls.append((method, path, kwargs))
+            return FakeResponse()
+        client._request = capture
+        client.update_completion_endpoint("cep_test", request)
+        assert_equal(payload, calls[0][2]["json"], "sync partial update payload")
+        client.reveal_completion_endpoint("cep_test")
+        client.reveal_embedding_endpoint("eep_test")
+        assert_equal("/v1.0/endpoints/completion/cep_test/reveal", calls[1][1], "sync reveal route")
+        client.close()
+        async def check_async():
+            client = AsyncAssistantHubClient("http://localhost", "test-key")
+            async def capture_async(method, path, **kwargs):
+                calls.append((method, path, kwargs))
+                return FakeResponse()
+            client._request = capture_async
+            await client.update_completion_endpoint("cep_test", request)
+            assert_equal(payload, calls[-1][2]["json"], "async partial update payload")
+            await client.reveal_completion_endpoint("cep_test")
+            assert_equal("/v1.0/endpoints/completion/cep_test/reveal", calls[-1][1], "async reveal route")
+            await client.close()
+        asyncio.run(check_async())
+    runner.run_test("SDK contract: Partio provider settings, PascalCase and explicit null", test_partio_provider_contract)
+
     def test_request_attached_document_ids() -> None:
         request = ChatCompletionRequest(
             messages=[ChatCompletionMessage(role="user", content="Summarize this document.")],

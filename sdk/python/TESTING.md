@@ -26,3 +26,5 @@ python test_sdk.py
 ```
 
 The integration runner covers request-history read paths and the eval judge-prompt contract used by the MCP server.
+
+Local contracts (no server): `python test_sdk.py --local-only`. Includes provider settings, PascalCase responses, null clearing and sync/async reveal routes.

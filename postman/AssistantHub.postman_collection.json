@@ -2155,7 +2155,8 @@
                 "endpoints",
                 "embedding"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2182,7 +2183,8 @@
                 "endpoints",
                 "embedding"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2197,7 +2199,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Name\": \"Ollama Embedding Endpoint\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": false\n}"
+              "raw": "{\n  \"Name\": \"Ollama Embedding Endpoint\",\n  \"Model\": \"nomic-embed-text\",\n  \"Endpoint\": \"http://localhost:11434\",\n  \"ApiFormat\": \"Ollama\",\n  \"Active\": true,\n  \"HealthCheckEnabled\": true,\n  \"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n  \"HealthCheckMethod\": \"GET\",\n  \"HealthCheckIntervalMs\": 30000,\n  \"HealthCheckTimeoutMs\": 10000,\n  \"HealthCheckExpectedStatusCode\": 200,\n  \"HealthyThreshold\": 2,\n  \"UnhealthyThreshold\": 2,\n  \"HealthCheckUseAuth\": false,\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"None\"\n    }\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/endpoints/embedding",
@@ -2209,7 +2211,8 @@
                 "endpoints",
                 "embedding"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2237,7 +2240,8 @@
                 "embedding",
                 "enumerate"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2256,7 +2260,8 @@
                 "embedding",
                 "health"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2281,7 +2286,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2315,7 +2321,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2391,7 +2398,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2426,7 +2434,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2460,7 +2469,35 @@
                 ":endpointId",
                 "load"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
+          }
+        },
+        {
+          "name": "Reveal Get Embedding Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId/reveal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "endpoints",
+                "embedding",
+                ":endpointId",
+                "reveal"
+              ],
+              "variable": [
+                {
+                  "key": "endpointId",
+                  "value": "endpoint-guid-here"
+                }
+              ]
+            },
+            "description": "Global administrators only. Explicit credential reveal, audited by Partio. Normal endpoint responses are masked. Do not log or save real reveal responses.\n\nPartio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         }
       ]
@@ -2492,7 +2529,8 @@
                 "endpoints",
                 "completion"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2519,7 +2557,8 @@
                 "endpoints",
                 "completion"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2534,7 +2573,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Name\": \"Ollama Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"Active\": true,\n\t\"Labels\": [\"local\", \"inference\"],\n\t\"Tags\": {\n\t\t\"owner\": \"assistant-team\"\n\t},\n\t\"SupportsToolCalling\": true,\n\t\"ToolCallingApiFormat\": \"OllamaChat\",\n\t\"SupportsParallelToolCalls\": false,\n\t\"SupportsStreamingToolCalls\": false,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": false\n}"
+              "raw": "{\n  \"Name\": \"Ollama Completion Endpoint\",\n  \"Model\": \"llama3\",\n  \"Endpoint\": \"http://localhost:11434\",\n  \"ApiFormat\": \"Ollama\",\n  \"Active\": true,\n  \"Labels\": [\n    \"local\",\n    \"inference\"\n  ],\n  \"Tags\": {\n    \"owner\": \"assistant-team\"\n  },\n  \"SupportsToolCalling\": true,\n  \"ToolCallingApiFormat\": \"OllamaChat\",\n  \"SupportsParallelToolCalls\": false,\n  \"SupportsStreamingToolCalls\": false,\n  \"HealthCheckEnabled\": true,\n  \"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n  \"HealthCheckMethod\": \"GET\",\n  \"HealthCheckIntervalMs\": 30000,\n  \"HealthCheckTimeoutMs\": 10000,\n  \"HealthCheckExpectedStatusCode\": 200,\n  \"HealthyThreshold\": 2,\n  \"UnhealthyThreshold\": 2,\n  \"HealthCheckUseAuth\": false,\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"None\"\n    }\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/endpoints/completion",
@@ -2546,7 +2585,8 @@
                 "endpoints",
                 "completion"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2574,7 +2614,8 @@
                 "completion",
                 "enumerate"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2593,7 +2634,8 @@
                 "completion",
                 "health"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2618,7 +2660,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2652,7 +2695,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2728,7 +2772,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2763,7 +2808,8 @@
                   "value": "endpoint-guid-here"
                 }
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2797,7 +2843,8 @@
                 ":endpointId",
                 "load"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2824,7 +2871,8 @@
                 "endpoints",
                 "completion"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         },
         {
@@ -2851,7 +2899,35 @@
                 "endpoints",
                 "completion"
               ]
-            }
+            },
+            "description": "Partio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
+          }
+        },
+        {
+          "name": "Reveal Get Completion Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/reveal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "endpoints",
+                "completion",
+                ":endpointId",
+                "reveal"
+              ],
+              "variable": [
+                {
+                  "key": "endpointId",
+                  "value": "endpoint-guid-here"
+                }
+              ]
+            },
+            "description": "Global administrators only. Explicit credential reveal, audited by Partio. Normal endpoint responses are masked. Do not log or save real reveal responses.\n\nPartio provider settings: selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere and VoyageAI. ProviderSettings is preserved recursively on partial updates. Normal endpoint responses mask credentials; explicit null clears them. The admin-only reveal routes are audited and are unavailable through MCP. See REST_API.md for the complete provider contract."
           }
         }
       ]

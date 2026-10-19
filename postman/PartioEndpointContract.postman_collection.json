@@ -1,0 +1,3801 @@
+{
+  "info": {
+    "name": "Partio endpoint contract regression",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run against a disposable current Partio instance. Creates inactive endpoints using dummy credentials only, checks all provider formats, masking/reveal and masked updates, then deletes each endpoint. No provider network requests."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{apiKey}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18400"
+    },
+    {
+      "key": "apiKey",
+      "value": "partioadmin"
+    }
+  ],
+  "item": [
+    {
+      "name": "completion Ollama: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Ollama\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Ollama\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Ollama: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Ollama: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Ollama: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Ollama: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Ollama: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OllamaCloud: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract OllamaCloud\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"OllamaCloud\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OllamaCloud: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OllamaCloud: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OllamaCloud: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OllamaCloud: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OllamaCloud: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OpenAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract OpenAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"OpenAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OpenAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OpenAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OpenAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OpenAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion OpenAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion vLLM: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract vLLM\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"vLLM\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion vLLM: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion vLLM: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion vLLM: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion vLLM: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion vLLM: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Gemini: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Gemini\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Gemini\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Gemini: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Gemini: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Gemini: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Gemini: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Gemini: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion xAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract xAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"xAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion xAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion xAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion xAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion xAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion xAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion AzureOpenAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract AzureOpenAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"AzureOpenAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"https://dummy.openai.azure.com\",\n  \"ProviderSettings\": {\n    \"AzureOpenAI\": {\n      \"ApiVersion\": \"2024-10-21\",\n      \"AuthMode\": \"ApiKey\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion AzureOpenAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion AzureOpenAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion AzureOpenAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion AzureOpenAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion AzureOpenAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Anthropic: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Anthropic\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Anthropic\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Anthropic: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Anthropic: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Anthropic: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Anthropic: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Anthropic: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Cohere: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Cohere\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Cohere\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Cohere: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Cohere: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Cohere: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Cohere: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Cohere: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Bedrock: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Bedrock\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Bedrock\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ProviderSettings\": {\n    \"Bedrock\": {\n      \"Region\": \"us-east-1\",\n      \"CredentialSource\": \"Static\",\n      \"AccessKeyId\": \"dummy-access\",\n      \"SecretAccessKey\": \"dummy-secret-key\",\n      \"SessionToken\": \"dummy-session-token\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Bedrock: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Bedrock: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Bedrock: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Bedrock: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion Bedrock: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion VertexAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract VertexAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"VertexAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"ProviderSettings\": {\n    \"VertexAI\": {\n      \"ProjectId\": \"dummy-project\",\n      \"Region\": \"us-central1\",\n      \"CredentialSource\": \"AccessToken\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion VertexAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion VertexAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion VertexAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion VertexAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "completion VertexAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Ollama: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Ollama\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Ollama\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Ollama: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Ollama: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Ollama: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Ollama: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Ollama: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OllamaCloud: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract OllamaCloud\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"OllamaCloud\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OllamaCloud: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OllamaCloud: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OllamaCloud: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OllamaCloud: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OllamaCloud: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OpenAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract OpenAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"OpenAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OpenAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OpenAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OpenAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OpenAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding OpenAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding vLLM: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract vLLM\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"vLLM\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding vLLM: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding vLLM: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding vLLM: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding vLLM: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding vLLM: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Gemini: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Gemini\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Gemini\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Gemini: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Gemini: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Gemini: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Gemini: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Gemini: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding xAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract xAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"xAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding xAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding xAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding xAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding xAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding xAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding AzureOpenAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract AzureOpenAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"AzureOpenAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"https://dummy.openai.azure.com\",\n  \"ProviderSettings\": {\n    \"AzureOpenAI\": {\n      \"ApiVersion\": \"2024-10-21\",\n      \"AuthMode\": \"ApiKey\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding AzureOpenAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding AzureOpenAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding AzureOpenAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding AzureOpenAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding AzureOpenAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Cohere: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Cohere\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Cohere\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Cohere: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Cohere: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Cohere: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Cohere: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Cohere: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Bedrock: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract Bedrock\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"Bedrock\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ProviderSettings\": {\n    \"Bedrock\": {\n      \"Region\": \"us-east-1\",\n      \"CredentialSource\": \"Static\",\n      \"AccessKeyId\": \"dummy-access\",\n      \"SecretAccessKey\": \"dummy-secret-key\",\n      \"SessionToken\": \"dummy-session-token\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Bedrock: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Bedrock: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Bedrock: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Bedrock: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding Bedrock: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VertexAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract VertexAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"VertexAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"ProviderSettings\": {\n    \"VertexAI\": {\n      \"ProjectId\": \"dummy-project\",\n      \"Region\": \"us-central1\",\n      \"CredentialSource\": \"AccessToken\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VertexAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VertexAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VertexAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VertexAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VertexAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding TEI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract TEI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"TEI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"Endpoint\": \"http://127.0.0.1:4917/providers\",\n  \"ProviderSettings\": {\n    \"Auth\": {\n      \"Mode\": \"Header\",\n      \"HeaderName\": \"X-Endpoint-Key\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding TEI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding TEI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding TEI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding TEI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding TEI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VoyageAI: create masks secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"AssistantHub contract VoyageAI\",\n  \"TenantId\": \"default\",\n  \"Model\": \"test-model\",\n  \"ApiFormat\": \"VoyageAI\",\n  \"Active\": false,\n  \"HealthCheckEnabled\": false,\n  \"ApiKey\": \"dummy-provider-key\",\n  \"ProviderSettings\": {\n    \"VoyageAI\": {\n      \"InputType\": \"document\",\n      \"OutputDimension\": 512\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json(); pm.collectionVariables.set('endpointId',body.Id); pm.collectionVariables.set('currentEndpoint',JSON.stringify(body));",
+              "pm.test('masked credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/); if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VoyageAI: normal read stays masked",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('read',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('normal read is masked',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.match(/^\\*{4}/);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VoyageAI: explicit reveal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('real credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SecretAccessKey).to.eql('dummy-secret-key');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VoyageAI: masked update preserves secrets",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{{currentEndpoint}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VoyageAI: preserved secret after update",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}/reveal"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reveal after update',()=>pm.response.to.have.status(200));const body=pm.response.json();pm.test('masked placeholders preserve stored credentials',()=>{if(body.ApiKey)pm.expect(body.ApiKey).to.eql('dummy-provider-key');if(body.ProviderSettings?.Bedrock)pm.expect(body.ProviderSettings.Bedrock.SessionToken).to.eql('dummy-session-token');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "embedding VoyageAI: cleanup",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{endpointId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deleted',()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

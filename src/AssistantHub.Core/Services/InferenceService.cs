@@ -22,7 +22,7 @@ namespace AssistantHub.Core.Services
     /// <summary>
     /// Inference service for generating responses from language models.
     /// </summary>
-    public class InferenceService : InferenceServiceProviderBase
+    public partial class InferenceService : InferenceServiceProviderBase
     {
         #region Public-Members
 
@@ -87,10 +87,17 @@ namespace AssistantHub.Core.Services
                     case InferenceProviderEnum.Ollama:
                         return await ListOllamaModelsAsync().ConfigureAwait(false);
 
+                    case InferenceProviderEnum.vLLM:
                     case InferenceProviderEnum.xAI:
                     case InferenceProviderEnum.OpenAI:
                         return await ListOpenAIModelsAsync().ConfigureAwait(false);
 
+                    case InferenceProviderEnum.AzureOpenAI:
+                    case InferenceProviderEnum.Anthropic:
+                    case InferenceProviderEnum.Cohere:
+                    case InferenceProviderEnum.Bedrock:
+                    case InferenceProviderEnum.VertexAI:
+                        return new List<InferenceModel> { new InferenceModel { Name = _Settings.DefaultModel, OwnedBy = _Settings.Provider.ToString(), PullSupported = false } };
                     case InferenceProviderEnum.Gemini:
                         return await ListGeminiModelsAsync().ConfigureAwait(false);
 
@@ -131,6 +138,7 @@ namespace AssistantHub.Core.Services
                 using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
                 {
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey, _Settings.ProviderSettings);
 
                     HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                     string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -183,6 +191,7 @@ namespace AssistantHub.Core.Services
                 using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
                 {
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey, _Settings.ProviderSettings);
 
                     using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                     {
@@ -272,6 +281,7 @@ namespace AssistantHub.Core.Services
                 using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, url))
                 {
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey, _Settings.ProviderSettings);
 
                     HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
 
@@ -325,7 +335,7 @@ namespace AssistantHub.Core.Services
 
             string effectiveModel = !String.IsNullOrEmpty(model) ? model : _Settings.DefaultModel;
             string effectiveEndpoint = !String.IsNullOrEmpty(endpoint) ? endpoint : _Settings.Endpoint;
-            string effectiveApiKey = !String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey;
+            string effectiveApiKey = (PartioEndpointRuntime.IsManaged || endpoint != null) ? apiKey : (!String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey);
 
             // Build the system message with context
             string fullSystemMessage = BuildSystemMessage(systemPrompt, contextChunks);
@@ -341,8 +351,12 @@ namespace AssistantHub.Core.Services
                 {
                     InferenceResult result;
 
+                    if (RequiresProviderAdapter(provider))
+                        result = await GenerateAdapterAsync(new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = fullSystemMessage }, new ChatCompletionMessage { Role = "user", Content = userMessage } }, effectiveModel, maxTokens, temperature, topP, provider, effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                    else
                     switch (provider)
                     {
+                        case InferenceProviderEnum.vLLM:
                         case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             result = await GenerateOpenAIResponseAsync(
@@ -434,7 +448,7 @@ namespace AssistantHub.Core.Services
 
             string effectiveModel = !String.IsNullOrEmpty(model) ? model : _Settings.DefaultModel;
             string effectiveEndpoint = !String.IsNullOrEmpty(endpoint) ? endpoint : _Settings.Endpoint;
-            string effectiveApiKey = !String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey;
+            string effectiveApiKey = (PartioEndpointRuntime.IsManaged || endpoint != null) ? apiKey : (!String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey);
 
             _Logging.Debug(_Header + "generating multi-message response using provider " + provider.ToString() + " model " + effectiveModel);
 
@@ -447,8 +461,12 @@ namespace AssistantHub.Core.Services
                 {
                     InferenceResult result;
 
+                    if (RequiresProviderAdapter(provider))
+                        result = await GenerateAdapterAsync(messages, effectiveModel, maxTokens, temperature, topP, provider, effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                    else
                     switch (provider)
                     {
+                        case InferenceProviderEnum.vLLM:
                         case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             result = await GenerateOpenAIResponseFromMessagesAsync(
@@ -550,7 +568,7 @@ namespace AssistantHub.Core.Services
 
             string effectiveModel = !String.IsNullOrEmpty(model) ? model : _Settings.DefaultModel;
             string effectiveEndpoint = !String.IsNullOrEmpty(endpoint) ? endpoint : _Settings.Endpoint;
-            string effectiveApiKey = !String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey;
+            string effectiveApiKey = (PartioEndpointRuntime.IsManaged || endpoint != null) ? apiKey : (!String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey);
 
             _Logging.Debug(_Header + "generating tool-capable response using provider " + provider.ToString() + " model " + effectiveModel);
 
@@ -564,8 +582,12 @@ namespace AssistantHub.Core.Services
                 {
                     InferenceResult result;
 
+                    if (RequiresProviderAdapter(provider, true))
+                        result = await GenerateAdapterAsync(messages, effectiveModel, maxTokens, temperature, topP, provider, effectiveEndpoint, effectiveApiKey, token, tools, toolChoice).ConfigureAwait(false);
+                    else
                     switch (provider)
                     {
+                        case InferenceProviderEnum.vLLM:
                         case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             result = await GenerateOpenAIResponseWithToolsFromMessagesAsync(
@@ -644,7 +666,7 @@ namespace AssistantHub.Core.Services
 
             string effectiveModel = !String.IsNullOrEmpty(model) ? model : _Settings.DefaultModel;
             string effectiveEndpoint = !String.IsNullOrEmpty(endpoint) ? endpoint : _Settings.Endpoint;
-            string effectiveApiKey = !String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey;
+            string effectiveApiKey = (PartioEndpointRuntime.IsManaged || endpoint != null) ? apiKey : (!String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey);
 
             _Logging.Debug(_Header + "generating streaming response using provider " + provider.ToString() + " model " + effectiveModel);
 
@@ -656,8 +678,12 @@ namespace AssistantHub.Core.Services
 
                 try
                 {
+                    if (RequiresProviderAdapter(provider))
+                        await GenerateAdapterStreamingAsync(messages, effectiveModel, maxTokens, temperature, topP, provider, effectiveEndpoint, effectiveApiKey, onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                    else
                     switch (provider)
                     {
+                        case InferenceProviderEnum.vLLM:
                         case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             await GenerateOpenAIStreamingAsync(

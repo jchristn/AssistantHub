@@ -187,7 +187,7 @@ namespace AssistantHub.Server.OpenApi
                 + "MaxConcurrentRequests (default 2), MaxQueueDepth (default 0), and MaximumTimeoutMs (default 60000) control Partio's per-endpoint concurrency: with MaxQueueDepth 0 requests over the concurrency limit are rejected with 429, while a positive value queues them until a slot frees or the request times out with 504. "
                 + "On success the endpoint is registered with AssistantHub's health-check service when HealthCheckEnabled and Active are true. "
                 + _Proxied)
-            .Body("Embedding endpoint definition. Model, Endpoint, and ApiFormat are required by Partio. ApiFormat accepts Ollama, OllamaCloud, OpenAI, xAI, or Gemini. OllamaCloud uses https://ollama.com; xAI defaults to https://api.x.ai. Both require ApiKey. Select a model available to your provider account; cloud model pull/delete are unsupported.", ExampleEndpointRequest())
+            .Body("Embedding endpoint definition. ApiFormat accepts Ollama, OllamaCloud, OpenAI, vLLM, Gemini, xAI, AzureOpenAI, Cohere, Bedrock, VertexAI, TEI, VoyageAI. ProviderSettings carries selectable Auth (None/Bearer/Header/QueryParameter/Basic), AzureOpenAI, Anthropic, Bedrock, VertexAI, Cohere or VoyageAI settings. Model is required; Endpoint may use provider defaults or derive from the region. Credentials are masked in normal responses; explicit null clears a secret, masked values preserve it, and omitted nested settings are preserved. OllamaCloud is fixed to https://ollama.com. Cloud model pull/delete are unsupported.", ExampleEndpointRequest())
             .Returns(201, "Endpoint created (Partio's response, relayed unchanged).", ExampleEndpoint())
             .Errors(400, 401, 403, 500);
 
@@ -201,14 +201,14 @@ namespace AssistantHub.Server.OpenApi
 
         /// <summary>GET /v1.0/endpoints/embedding/health.</summary>
         public static OpenApiRouteMetadata ListHealth => ApiDoc.Create("List embedding endpoint health", _Tag)
-            .Describe(_Admin + "Returns health status from AssistantHub's local health-check service (Partio is not called) for every monitored endpoint. Only active endpoints with HealthCheckEnabled are monitored. "
+            .Describe(_Admin + "Returns health status from AssistantHub's local health-check service (provider-aware checks are delegated to Partio when needed) for every monitored endpoint. Only active endpoints with HealthCheckEnabled are monitored. "
                 + "The list is not filtered by endpoint type, so monitored completion endpoints are included as well. Returns an empty array when nothing is monitored.")
             .Returns(200, "Health status of all monitored endpoints.", new List<EndpointHealthStatus> { ExampleHealth() })
             .Errors(401, 403, 500);
 
         /// <summary>GET /v1.0/endpoints/embedding/{endpointId}/health.</summary>
         public static OpenApiRouteMetadata ReadHealth => ApiDoc.Create("Get embedding endpoint health", _Tag)
-            .Describe(_Admin + "Returns health status for one endpoint from AssistantHub's local health-check service (Partio is not called), including uptime percentage and the last 24 hours of check history. "
+            .Describe(_Admin + "Returns health status for one endpoint from AssistantHub's local health-check service (provider-aware checks are delegated to Partio when needed), including uptime percentage and the last 24 hours of check history. "
                 + "Returns 404 when the endpoint is not being monitored (it does not exist, is inactive, or has HealthCheckEnabled false).")
             .Returns(200, "Endpoint health status.", ExampleHealth())
             .Errors(401, 403, 404, 500);
@@ -251,6 +251,12 @@ namespace AssistantHub.Server.OpenApi
             .Error(429, "Endpoint concurrency limit reached (relayed from Partio).", new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "Endpoint concurrency limit reached."))
             .Error(502, "Partio or upstream provider failure (relayed from Partio).", new ApiErrorResponse(ApiErrorEnum.InternalError, null, "Upstream provider failure."))
             .Error(504, "Upstream provider timeout (relayed from Partio).", new ApiErrorResponse(ApiErrorEnum.InternalError, null, "Upstream provider timeout."));
+
+        /// <summary>GET /v1.0/endpoints/embedding/{endpointId}/reveal. Admin-only audited secret access.</summary>
+        public static OpenApiRouteMetadata Reveal => ApiDoc.Create("Reveal embedding endpoint credentials", _Tag)
+            .Describe(_Admin + "Returns the unmasked endpoint through Partio's audited reveal API. Normal reads and mutations mask ApiKey and provider secrets. This route is intentionally unavailable through MCP.")
+            .Returns(200, "Unmasked embedding endpoint.", ExampleEndpoint())
+            .Errors(401, 403, 404, 500);
 
         /// <summary>GET /v1.0/endpoints/embedding/{endpointId}.</summary>
         public static OpenApiRouteMetadata Read => ApiDoc.Create("Get embedding endpoint", _Tag)

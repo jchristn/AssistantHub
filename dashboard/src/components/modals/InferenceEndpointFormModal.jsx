@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
-import EndpointConnectionFields from './EndpointConnectionFields';
+import ProviderConnectionFields from '../ProviderConnectionFields';
+import ProviderPicker from '../ProviderPicker';
+import { applyProviderChange, authFromEndpoint, providerSettingsToForm, hasEndpointOverride, validateConnection, buildConnectionPayload, apiKeyRequired, getProvider, mergeRevealedSecrets, hasMaskedSecrets, usesConnectivityProbe, probeDescription, apiKeyLabel } from '../../utils/providers';
 import {
   API_FORMAT_OPTIONS,
   HEALTH_CHECK_METHOD_OPTIONS,
@@ -89,7 +91,7 @@ function getSourceToolBoolean(source, keys, tagKey, labels) {
   return Array.isArray(labels) && labels.some(label => label.toLowerCase() === TOOL_CALLING_LABEL.toLowerCase());
 }
 
-function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) {
+function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose, onRevealEndpoint }) {
   const isEdit = !!endpoint;
   const source = endpoint || initialData;
   const initialApiFormat = getSourceText(source, 'ApiFormat', 'apiFormat') || 'Ollama';
@@ -98,11 +100,15 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
   const initialTags = getSourceTags(source);
   const initialDefaults = getApiFormatDefaults(initialApiFormat, initialEndpoint || getDefaultEndpoint(initialApiFormat));
 
+  const initialProviderSettings = providerSettingsToForm(initialApiFormat, source?.ProviderSettings);
   const [form, setForm] = useState({
     Name: getSourceText(source, 'Name', 'name'),
     Model: getSourceText(source, 'Model', 'model') || getDefaultModel(initialApiFormat, 'inference'),
     Endpoint: initialEndpoint || initialDefaults.Endpoint,
     ApiFormat: initialApiFormat,
+    ProviderSettings: initialProviderSettings,
+    Auth: authFromEndpoint(source || {}),
+    EndpointOverride: hasEndpointOverride(initialApiFormat, source?.Endpoint, initialProviderSettings),
     ApiKey: getSourceText(source, 'ApiKey', 'apiKey'),
     Active: getSourceField(source, 'Active', 'active') !== undefined ? getSourceBoolean(source, 'Active', 'active') : true,
     MaxConcurrentRequests: getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') !== undefined ? getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') : 2,
@@ -130,7 +136,9 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const providerFields = getEndpointProviderFields(form.ApiFormat);
+  const [connectionErrors, setConnectionErrors] = useState({});
+  const [revealing, setRevealing] = useState(false);
+  const credentialLabel = apiKeyLabel(form.ApiFormat, form.ProviderSettings, form.Auth);
   // The health check URL auto-follows the endpoint until the user edits it manually.
   const [healthCheckUrlTouched, setHealthCheckUrlTouched] = useState(
     !isDefaultHealthCheckUrl(
@@ -141,42 +149,15 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
   );
   const handleChange = (field, value) => {
     setError('');
+    if (field === 'ApiFormat') {
+      setForm(previous => ({ ...applyProviderChange(previous, value, 'completion', healthCheckUrlTouched), ToolCallingApiFormat: getDefaultToolCallingApiFormat(value) }));
+      setConnectionErrors({});
+      return;
+    }
     if (field === 'HealthCheckUrl') setHealthCheckUrlTouched(true);
     setForm(prev => {
       const updated = { ...prev, [field]: value };
-      if (field === 'ApiFormat') {
-        const oldDefaults = getApiFormatDefaults(prev.ApiFormat, prev.Endpoint || getDefaultEndpoint(prev.ApiFormat));
-        const nextEndpoint = resolveProviderEndpoint(value,
-          !prev.Endpoint || prev.Endpoint === getDefaultEndpoint(prev.ApiFormat)
-            ? getDefaultEndpoint(value)
-            : prev.Endpoint);
-        const newDefaults = getApiFormatDefaults(value, nextEndpoint);
-        const oldDefaultModel = getDefaultModel(prev.ApiFormat, 'inference');
-        const newDefaultModel = getDefaultModel(value, 'inference');
-        const oldDefaultToolFormat = getDefaultToolCallingApiFormat(prev.ApiFormat);
-        const newDefaultToolFormat = getDefaultToolCallingApiFormat(value);
-
-        updated.Endpoint = nextEndpoint;
-        if (!prev.Model || prev.Model === oldDefaultModel) {
-          updated.Model = newDefaultModel;
-        }
-        if (!prev.ToolCallingApiFormat || prev.ToolCallingApiFormat === oldDefaultToolFormat) {
-          updated.ToolCallingApiFormat = newDefaultToolFormat;
-        }
-
-        if (!healthCheckUrlTouched) {
-          updated.HealthCheckUrl = newDefaults.HealthCheckUrl;
-        }
-        if (prev.HealthCheckUseAuth === oldDefaults.HealthCheckUseAuth) {
-          updated.HealthCheckUseAuth = newDefaults.HealthCheckUseAuth;
-        }
-        if (prev.HealthCheckIntervalMs === oldDefaults.HealthCheckIntervalMs) {
-          updated.HealthCheckIntervalMs = newDefaults.HealthCheckIntervalMs;
-        }
-        if (prev.HealthCheckTimeoutMs === oldDefaults.HealthCheckTimeoutMs) {
-          updated.HealthCheckTimeoutMs = newDefaults.HealthCheckTimeoutMs;
-        }
-      } else if (field === 'Endpoint') {
+      if (field === 'Endpoint') {
         updated.HealthCheckUrl = healthCheckUrlTouched
           ? getHealthCheckUrlForEndpointChange(prev.HealthCheckUrl, prev.Endpoint, value, prev.ApiFormat)
           : getDefaultHealthCheckUrl(value, prev.ApiFormat);
@@ -185,14 +166,23 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     });
   };
 
-  const healthCheckUrlInvalid = form.HealthCheckUrl && !isAbsoluteUrl(form.HealthCheckUrl);
+  const healthCheckUrlInvalid = !usesConnectivityProbe(form.ApiFormat) && form.HealthCheckUrl && !isAbsoluteUrl(form.HealthCheckUrl);
+
+  const handleReveal = async () => {
+    if (!endpoint?.Id || !onRevealEndpoint) return;
+    setRevealing(true);
+    try {
+      const revealed = await onRevealEndpoint(endpoint.Id);
+      setForm(current => mergeRevealedSecrets(current, revealed));
+    } catch (err) { setError(err.message || 'Unable to reveal endpoint credentials.'); }
+    finally { setRevealing(false); }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (providerFields.credentialRequired && !form.ApiKey?.trim()) {
-      setError(`${providerFields.credentialLabel} is required for ${form.ApiFormat}.`);
-      return;
-    }
+    const errors = validateConnection(form, 'completion');
+    setConnectionErrors(errors);
+    if (Object.keys(errors).length) { setError(Object.values(errors)[0]); return; }
     setError('');
     setSaving(true);
     try {
@@ -225,6 +215,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         UnhealthyThreshold: parseInt(form.UnhealthyThreshold) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).UnhealthyThreshold,
         HealthCheckUseAuth: form.HealthCheckUseAuth
       };
+      Object.assign(data, buildConnectionPayload(form));
       if (isEdit && endpoint.GUID) data.GUID = endpoint.GUID;
       await onSave(data);
     } catch (err) {
@@ -245,7 +236,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           <button
             className="btn btn-primary"
             onClick={handleSubmit}
-            disabled={saving || !form.Model.trim() || !form.Endpoint.trim() || !form.ApiFormat || healthCheckUrlInvalid || (providerFields.credentialRequired && !form.ApiKey?.trim())}
+            disabled={saving || !form.ApiFormat || healthCheckUrlInvalid}
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -268,34 +259,9 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label><Tooltip text="API format used by the inference endpoint (Ollama, Ollama Cloud, OpenAI, Grok / xAI, or Gemini)">Format</Tooltip></label>
-              <select
-                value={form.ApiFormat}
-                onChange={(e) => handleChange('ApiFormat', e.target.value)}
-                required
-              >
-                <option value="">-- Select Format --</option>
-                {API_FORMAT_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label><Tooltip text={providerFields.inferenceModelPlaceholder}>Model</Tooltip></label>
-              <input
-                type="text"
-                placeholder={providerFields.inferenceModelPlaceholder}
-                value={form.Model}
-                onChange={(e) => handleChange('Model', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <EndpointConnectionFields form={form} onChange={handleChange} />
+          <ProviderPicker kind="completion" value={form.ApiFormat} onChange={value => handleChange('ApiFormat', value)} confirmChange={isEdit} />
+          <ProviderConnectionFields kind="completion" form={form} setForm={setForm} errors={connectionErrors}
+            healthFieldsEdited={healthCheckUrlTouched} editing={isEdit && hasMaskedSecrets(form)} onReveal={handleReveal} revealing={revealing} />
         </div>
 
         {/* Request Handling */}
@@ -409,11 +375,12 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           {form.SupportsToolCalling && (
             <>
               <div className="form-group">
-                <label><Tooltip text="Wire format used for tool definitions and model tool calls. Use Ollama Chat for native Ollama endpoints and OpenAI Chat Completions for OpenAI-compatible endpoints.">Tool Calling Format</Tooltip></label>
+                <label><Tooltip text="Wire format used for tool definitions and model tool calls. Use Ollama Chat for Ollama, OpenAI Chat Completions for OpenAI/vLLM/xAI, and Provider Native for Azure OpenAI, Anthropic, Gemini, Cohere, Bedrock or Vertex AI.">Tool Calling Format</Tooltip></label>
                 <select
                   value={form.ToolCallingApiFormat}
                   onChange={(e) => handleChange('ToolCallingApiFormat', e.target.value)}
                 >
+                  <option value="Native">Provider Native</option>
                   <option value="OllamaChat">Ollama Chat</option>
                   <option value="OpenAIChatCompletions">OpenAI Chat Completions</option>
                 </select>
@@ -455,6 +422,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         {/* Health Check */}
         <div className="form-section">
           <div className="form-section-title">Health Check</div>
+          {usesConnectivityProbe(form.ApiFormat) && <p>{probeDescription(form.ApiFormat, 'completion')}</p>}
 
           <div className="form-group">
             <div className="form-toggle">
@@ -470,6 +438,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </div>
           </div>
 
+{!usesConnectivityProbe(form.ApiFormat) && (
           <div className="form-group">
             <label><Tooltip text="Full URL to send health check requests to (e.g. http://ollama:11434/api/tags). Must be an absolute URL, not a relative path.">Health Check URL</Tooltip></label>
             <input
@@ -484,8 +453,10 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
               </small>
             )}
           </div>
+)}
 
           <div className="form-row">
+{!usesConnectivityProbe(form.ApiFormat) && (
             <div className="form-group">
               <label><Tooltip text="HTTP method used for health check requests">Health Check Method</Tooltip></label>
               <select
@@ -497,6 +468,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 ))}
               </select>
             </div>
+)}
 
             <div className="form-group">
               <label><Tooltip text="Time in milliseconds between consecutive health check requests">Interval (ms)</Tooltip></label>
@@ -520,6 +492,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
               />
             </div>
 
+{!usesConnectivityProbe(form.ApiFormat) && (
             <div className="form-group">
               <label><Tooltip text="HTTP status code expected from a successful health check response">Expected Status Code</Tooltip></label>
               <input
@@ -528,6 +501,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 onChange={(e) => handleChange('HealthCheckExpectedStatusCode', e.target.value)}
               />
             </div>
+)}
           </div>
 
           <div className="form-row">
@@ -552,6 +526,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </div>
           </div>
 
+{!usesConnectivityProbe(form.ApiFormat) && (
           <div className="form-group">
             <div className="form-toggle">
               <label className="toggle-switch">
@@ -562,9 +537,10 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 />
                 <span className="toggle-slider"></span>
               </label>
-              <span><Tooltip text={`Authenticate health checks using the configured ${providerFields.credentialLabel.toLowerCase()}.`}>Use Auth for Health Check</Tooltip></span>
+              <span><Tooltip text={`Authenticate health checks using the configured ${credentialLabel.toLowerCase()}.`}>Use Auth for Health Check</Tooltip></span>
             </div>
           </div>
+)}
         </div>
       </form>
     </Modal>

@@ -788,6 +788,20 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         )
         return PartioEndpointConfig.model_validate(response.json())
 
+    async def reveal_embedding_endpoint(self, endpoint_id: str) -> PartioEndpointConfig:
+        """Reveal stored embedding credentials (global administrator only, audited by Partio).
+
+        Args:
+            endpoint_id: The endpoint identifier.
+
+        Returns:
+            The requested endpoint configuration.
+        """
+        response = await self._request(
+            "GET", f"/v1.0/endpoints/embedding/{endpoint_id}/reveal"
+        )
+        return PartioEndpointConfig.model_validate(response.json())
+
     async def create_embedding_endpoint(
         self, endpoint: PartioEndpointRequest
     ) -> PartioEndpointConfig:
@@ -804,7 +818,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         response = await self._request(
             "PUT",
             "/v1.0/endpoints/embedding",
-            json=endpoint.model_dump(by_alias=True, exclude_none=True),
+            json=endpoint.model_dump(by_alias=True, exclude_unset=True),
         )
         return PartioEndpointConfig.model_validate(response.json())
 
@@ -823,7 +837,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         response = await self._request(
             "PUT",
             f"/v1.0/endpoints/embedding/{endpoint_id}",
-            json=endpoint.model_dump(by_alias=True, exclude_none=True),
+            json=endpoint.model_dump(by_alias=True, exclude_unset=True),
         )
         return PartioEndpointConfig.model_validate(response.json())
 
@@ -913,6 +927,20 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         )
         return PartioEndpointConfig.model_validate(response.json())
 
+    async def reveal_completion_endpoint(self, endpoint_id: str) -> PartioEndpointConfig:
+        """Reveal stored completion credentials (global administrator only, audited by Partio).
+
+        Args:
+            endpoint_id: The endpoint identifier.
+
+        Returns:
+            The requested endpoint configuration.
+        """
+        response = await self._request(
+            "GET", f"/v1.0/endpoints/completion/{endpoint_id}/reveal"
+        )
+        return PartioEndpointConfig.model_validate(response.json())
+
     async def create_completion_endpoint(
         self, endpoint: PartioEndpointRequest
     ) -> PartioEndpointConfig:
@@ -929,7 +957,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         response = await self._request(
             "PUT",
             "/v1.0/endpoints/completion",
-            json=endpoint.model_dump(by_alias=True, exclude_none=True),
+            json=endpoint.model_dump(by_alias=True, exclude_unset=True),
         )
         return PartioEndpointConfig.model_validate(response.json())
 
@@ -948,7 +976,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         response = await self._request(
             "PUT",
             f"/v1.0/endpoints/completion/{endpoint_id}",
-            json=endpoint.model_dump(by_alias=True, exclude_none=True),
+            json=endpoint.model_dump(by_alias=True, exclude_unset=True),
         )
         return PartioEndpointConfig.model_validate(response.json())
 
@@ -1606,7 +1634,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
     async def list_request_history(
         self, filter: Optional[RequestHistorySearchFilter] = None
     ) -> EnumerationResult[RequestHistoryEntry]:
-        """List request-history entries."""
+        """Reveal stored endpoint credentials (global administrator only, audited by Partio)."""
         response = await self._request(
             "GET",
             "/v1.0/requesthistory",

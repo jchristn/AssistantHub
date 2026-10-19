@@ -86,7 +86,7 @@ namespace Test.Automated
                 AssertHelper.AreEqual(InferenceProviderEnum.Ollama, Enum.Parse<InferenceProviderEnum>("Ollama"), "Ollama");
                 AssertHelper.AreEqual(InferenceProviderEnum.OpenAI, Enum.Parse<InferenceProviderEnum>("OpenAI"), "OpenAI");
                 AssertHelper.AreEqual(InferenceProviderEnum.Gemini, Enum.Parse<InferenceProviderEnum>("Gemini"), "Gemini");
-                AssertHelper.AreEqual(5, Enum.GetValues<InferenceProviderEnum>().Length, "count");
+                AssertHelper.AreEqual(11, Enum.GetValues<InferenceProviderEnum>().Length, "count");
             });
 
             await ExecuteTestAsync("Enum.FeedbackRatingEnum: all values", async () =>
@@ -1716,6 +1716,19 @@ namespace Test.Automated
 
                 AssertHelper.AreEqual("collection_search", call.Name, "tool function name");
                 AssertHelper.AreEqual("{\"query\":\"alpha\",\"max_results\":2}", call.Arguments, "raw object arguments");
+            });
+
+            await ExecuteTestAsync("Models.PartioEndpointMerge: nested provider settings preserve secrets and explicit null clears", async () =>
+            {
+                string current = """{"ApiKey":"****last","ProviderSettings":{"Bedrock":{"Region":"us-east-1","SecretAccessKey":"****last","SessionToken":"****oken"},"Future":{"Keep":true}}}""";
+                string merged = PartioEndpointMerge.BuildUpdateBody(current, """{"ProviderSettings":{"Bedrock":{"Region":"us-west-2","SessionToken":null}}}""");
+                using JsonDocument document = JsonDocument.Parse(merged);
+                JsonElement settings = document.RootElement.GetProperty("ProviderSettings");
+                AssertHelper.AreEqual("****last", settings.GetProperty("Bedrock").GetProperty("SecretAccessKey").GetString(), "masked secret preserved");
+                AssertHelper.AreEqual(JsonValueKind.Null, settings.GetProperty("Bedrock").GetProperty("SessionToken").ValueKind, "null clears nested credential");
+                AssertHelper.IsTrue(settings.GetProperty("Future").GetProperty("Keep").GetBoolean(), "unknown settings preserved");
+                using JsonDocument cleared = JsonDocument.Parse(PartioEndpointMerge.BuildUpdateBody(current, """{"ApiKey":null}"""));
+                AssertHelper.AreEqual(JsonValueKind.Null, cleared.RootElement.GetProperty("ApiKey").ValueKind, "null clears root key");
             });
 
             return GetResults();

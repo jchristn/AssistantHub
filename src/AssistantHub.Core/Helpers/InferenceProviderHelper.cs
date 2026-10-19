@@ -3,6 +3,8 @@ namespace AssistantHub.Core.Helpers
     using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
+    using System.Text;
+    using AssistantHub.Core.Models;
     using AssistantHub.Core.Enums;
 
     /// <summary>
@@ -44,6 +46,7 @@ namespace AssistantHub.Core.Helpers
             if (apiFormat.Equals("xAI", StringComparison.OrdinalIgnoreCase) || apiFormat.Equals("Grok", StringComparison.OrdinalIgnoreCase))
                 return InferenceProviderEnum.xAI;
 
+            if (Enum.TryParse(apiFormat, true, out InferenceProviderEnum parsed)) return parsed;
             return fallback;
         }
 
@@ -56,6 +59,12 @@ namespace AssistantHub.Core.Helpers
         {
             switch (provider)
             {
+                case InferenceProviderEnum.Anthropic: return "https://api.anthropic.com";
+                case InferenceProviderEnum.Cohere: return "https://api.cohere.com";
+                case InferenceProviderEnum.AzureOpenAI:
+                case InferenceProviderEnum.Bedrock:
+                case InferenceProviderEnum.VertexAI: return "";
+                case InferenceProviderEnum.vLLM: return "http://localhost:8000";
                 case InferenceProviderEnum.OllamaCloud:
                     return "https://ollama.com";
                 case InferenceProviderEnum.xAI:
@@ -80,6 +89,7 @@ namespace AssistantHub.Core.Helpers
         {
             switch (provider)
             {
+                case InferenceProviderEnum.vLLM:
                 case InferenceProviderEnum.xAI:
                 case InferenceProviderEnum.OpenAI:
                     return AppendVersionedPath(endpoint, "/v1", "/models");
@@ -97,9 +107,25 @@ namespace AssistantHub.Core.Helpers
         /// <param name="request">HTTP request.</param>
         /// <param name="provider">Inference provider.</param>
         /// <param name="apiKey">API key.</param>
-        public static void ApplyAuthentication(HttpRequestMessage request, InferenceProviderEnum provider, string apiKey)
+        public static void ApplyAuthentication(HttpRequestMessage request, InferenceProviderEnum provider, string apiKey, ProviderSettings settings = null)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
+            EndpointAuthSettings auth = provider is InferenceProviderEnum.Ollama or InferenceProviderEnum.OpenAI or InferenceProviderEnum.vLLM ? settings?.Auth : null;
+            if (auth != null)
+            {
+                request.Headers.Authorization = null;
+                switch (auth.Mode)
+                {
+                    case EndpointAuthModes.None: return;
+                    case EndpointAuthModes.Header: request.Headers.Add(auth.HeaderName, apiKey); return;
+                    case EndpointAuthModes.Basic:
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes(auth.Username + ":" + apiKey))); return;
+                    case EndpointAuthModes.QueryParameter:
+                        UriBuilder uri = new(request.RequestUri);
+                        uri.Query = uri.Query.TrimStart('?') + (String.IsNullOrEmpty(uri.Query) ? "" : "&") + Uri.EscapeDataString(auth.QueryParameterName) + "=" + Uri.EscapeDataString(apiKey);
+                        request.RequestUri = uri.Uri; return;
+                }
+            }
             if (String.IsNullOrEmpty(apiKey)) return;
 
             if (provider == InferenceProviderEnum.Gemini)
@@ -124,6 +150,7 @@ namespace AssistantHub.Core.Helpers
         {
             switch (provider)
             {
+                case InferenceProviderEnum.vLLM:
                 case InferenceProviderEnum.xAI:
                 case InferenceProviderEnum.OpenAI:
                     return AppendVersionedPath(endpoint, "/v1", "/chat/completions");

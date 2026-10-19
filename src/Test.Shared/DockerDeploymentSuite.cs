@@ -13,6 +13,17 @@ namespace Test.Automated
         {
             ClearResults();
 
+            await ExecuteTestAsync("Docker deployment: AssistantHub images use one release and refresh on recreation", async () =>
+            {
+                string compose = File.ReadAllText(Path.Combine(GetRepositoryRoot(), "docker", "compose.yaml"));
+                var images = System.Text.RegularExpressions.Regex.Matches(compose,
+                    @"image: jchristn77/assistanthub-(server|mcp|dashboard):([^\s]+)\r?\n\s+pull_policy: always");
+                AssertHelper.AreEqual(3, images.Count, "all AssistantHub images explicitly refresh");
+                string tag = images[0].Groups[2].Value;
+                foreach (System.Text.RegularExpressions.Match image in images)
+                    AssertHelper.AreEqual(tag, image.Groups[2].Value, "matching AssistantHub image releases");
+            });
+
             await ExecuteTestAsync("Docker deployment: compose uses shared PostgreSQL initializer", async () =>
             {
                 string root = GetRepositoryRoot();

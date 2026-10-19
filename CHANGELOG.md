@@ -3,6 +3,7 @@
 ## 0.17.2
 
 ### Fixed
+- Align Compose’s AssistantHub image tags with the published v1.1.0 build and always pull them. An already-running v0.17.0 dashboard was still serving the obsolete Columns fieldset/legend bundle; document the required container recreation.
 - Keep the Columns popup heading inside its padded background instead of rendering it across the border as a fieldset legend. Verified on desktop and mobile, including dark mode.
 - Put Columns inside the pagination toolbar on every paginated dashboard table, and inside the existing model/object toolbar. Column menus float above content without adding another row or clipping inside table containers.
 - Align all endpoint surfaces with current Partio: preserve nested provider/auth settings, resolve masked credentials through audited internal reveal reads, and delegate provider-aware health checks. Never send masked or unrelated global credentials to chat providers.

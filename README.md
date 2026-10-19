@@ -417,6 +417,15 @@ docker compose up -d
 
 Every AssistantHub dashboard table has a **Columns** control, including list views, search results, analytics, dialogs, tool activity, and Markdown tables in chat/feedback. The selector is part of the pagination row on paginated tables and the existing toolbar on model/object tables. Defaults are chosen per table to emphasize identifying fields, operational status, and useful results while keeping extra metadata and diagnostic details optional. Uncheck optional columns to hide them; **Show all columns** restores them and **Reset to defaults** restores the curated starting view. Choices are saved per table in the current browser. The first identifying column, row selection, and row actions are required; result/status columns also stay visible in outcome tables. Required columns are labeled and cannot be unchecked. Hiding a filtered or sorted column in list views clears that column's filter/sort.
 
+The Compose stack uses AssistantHub images tagged `v1.1.0` and always pulls them when recreating services. Publishing an image does not replace an already-running container. After updating the Compose file, refresh the stack:
+
+```bash
+docker compose -f docker/compose.yaml pull assistanthub-server assistanthub-mcp-server assistanthub-dashboard
+docker compose -f docker/compose.yaml up -d --force-recreate assistanthub-server assistanthub-mcp-server assistanthub-dashboard
+```
+
+A Columns popup with a title straddling its border is the older fieldset/legend bundle. The corrected build renders a heading inside the padded popup. Refresh the browser after recreating the dashboard container.
+
 | Dashboard | URL | Default Credentials |
 |---|---|---|
 | **AssistantHub** | [http://localhost:8801](http://localhost:8801) | Email: `admin@assistanthub`, Password: `password` |

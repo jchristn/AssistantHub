@@ -114,7 +114,7 @@ services:
   # --- Summarization, Chunking, Embedding (Partio) ---
 
   partio-server:
-    image: jchristn77/partio-server:v0.5.1
+    image: jchristn77/partio-server:v0.5.2
     pull_policy: always
     container_name: assistanthub-partio-server
     ports:
@@ -137,7 +137,7 @@ services:
     restart: unless-stopped
 
   partio-dashboard:
-    image: jchristn77/partio-dashboard:v0.5.1
+    image: jchristn77/partio-dashboard:v0.5.2
     pull_policy: always
     container_name: assistanthub-partio-dashboard
     ports:

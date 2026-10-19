@@ -16,6 +16,16 @@ try {
   await page.goto(url);
   await table('fixture-native').locator('summary').waitFor();
   await open('fixture-native');
+  const assertHeadingInside = async id => {
+    const popup = await menu(id).boundingBox();
+    const heading = await menu(id).getByRole('heading', { name: 'Visible columns', exact: true }).boundingBox();
+    assert.ok(heading.x >= popup.x + 8 && heading.y >= popup.y + 8
+      && heading.x + heading.width <= popup.x + popup.width - 8
+      && heading.y + heading.height <= popup.y + popup.height - 8,
+      'Visible columns heading is inside the padded popup');
+  };
+  await assertHeadingInside('fixture-native');
+  await page.screenshot({ path: '/tmp/assistanthub-columns-heading-desktop.png', fullPage: true });
   for (const name of ['Name Required', 'Status Required', 'Actions Required']) assert.ok(await menu('fixture-native').getByRole('checkbox', { name, exact: true }).isDisabled());
   await menu('fixture-native').getByRole('checkbox', { name: 'Metric', exact: true }).uncheck();
   assert.deepEqual(await visible('fixture-native'), ['Name', 'Status', 'Actions']);
@@ -108,9 +118,13 @@ try {
   await open('fixture-data');
   const mobileControls = await controls('fixture-data').locator('summary').boundingBox();
   assert.ok(mobileControls.x >= 0 && mobileControls.x + mobileControls.width <= 390, 'toolbar selector fits the narrow viewport');
+  await assertHeadingInside('fixture-data');
   const popup = await menu('fixture-data').boundingBox();
   assert.ok(popup.x >= 0 && popup.x + popup.width <= 390 && popup.y >= 0 && popup.y + popup.height <= 844, 'dropdown stays inside the viewport');
   await page.screenshot({ path: '/tmp/assistanthub-columns-mobile.png' , fullPage: true });
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await assertHeadingInside('fixture-data');
+  await page.screenshot({ path: '/tmp/assistanthub-columns-heading-mobile-dark.png', fullPage: true, animations: 'disabled' });
   assert.deepEqual(errors, []);
   console.log('PASS column toggles, required columns, table isolation, persistence, schema/row updates, actions, filters/sorting, spans, Markdown, keyboard, and tampered storage');
   const blocked = await browser.newPage();

@@ -161,8 +161,8 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
     <div className="configurable-table" data-table-id={tableId}>
       {controlsTarget ? createPortal(controls, controlsTarget) : controls}
       {menuOpen && createPortal(
-        <fieldset ref={optionsRef} id={optionsId} className="column-options" style={menuPosition} aria-label="Visible columns" data-column-options-for={tableId}>
-          <legend>Visible columns</legend>
+        <div role="group" ref={optionsRef} id={optionsId} className="column-options" style={menuPosition} aria-labelledby={optionsId + '-heading'} data-column-options-for={tableId}>
+          <h4 id={optionsId + '-heading'} className="column-options-title">Visible columns</h4>
           {columns.map(column => (
             <label key={column.key}>
               <input type="checkbox" checked={!hiddenKeys.has(column.key)} disabled={column.required}
@@ -175,7 +175,7 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
             <button type="button" className="btn btn-secondary" onClick={() => update([])}>Show all columns</button>
             <button type="button" className="btn btn-secondary" onClick={() => { resetHiddenColumns(tableId); setHidden(null); }}>Reset to defaults</button>
           </div>
-        </fieldset>, document.body
+        </div>, document.body
       )}
       <table {...props} id={props.id || generatedId} ref={tableRef}>{children}</table>
     </div>

@@ -3,6 +3,7 @@
 ## 0.17.2
 
 ### Fixed
+- Keep the Columns popup heading inside its padded background instead of rendering it across the border as a fieldset legend. Verified on desktop and mobile, including dark mode.
 - Put Columns inside the pagination toolbar on every paginated dashboard table, and inside the existing model/object toolbar. Column menus float above content without adding another row or clipping inside table containers.
 - Align all endpoint surfaces with current Partio: preserve nested provider/auth settings, resolve masked credentials through audited internal reveal reads, and delegate provider-aware health checks. Never send masked or unrelated global credentials to chat providers.
 - Inference and embedding create/edit forms now change connection fields by provider: Ollama Cloud uses a required Bearer Token and the fixed `https://ollama.com` endpoint; Gemini uses its API-key header, and other providers show their applicable credential and model guidance. Missing credentials disable saving, and validation/save errors render without an undefined `setError` call.

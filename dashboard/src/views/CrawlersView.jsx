@@ -133,7 +133,7 @@ function CrawlersView() {
       const next = getNextCrawl(row);
       return next ? next.toLocaleString() : '';
     }},
-    { key: 'LastResult', label: 'Result', tooltip: 'Result of the last crawl operation', render: (row) => {
+    { key: 'LastResult', required: true, label: 'Result', tooltip: 'Result of the last crawl operation', render: (row) => {
       if (row.LastCrawlSuccess === true) return <span className="status-badge badge-success">Success</span>;
       if (row.LastCrawlSuccess === false) return <span className="status-badge badge-failed">Failed</span>;
       return '';
@@ -238,7 +238,7 @@ function CrawlersView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setInitialFormData(null); setShowForm('create'); }}>Create Crawler</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setInitialFormData(null); setShowForm(row); }} />
+      <DataTable tableId="crawlers-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setInitialFormData(null); setShowForm(row); }} />
       {showForm && (
         <CrawlPlanFormModal
           plan={showForm !== 'create' ? showForm : null}

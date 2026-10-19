@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -181,7 +182,7 @@ function RecordsView({ embedded = false, scopeCollectionId = '' }) {
           ) : filteredData.length === 0 ? (
             <div className="empty-state"><p>{documentKeyFilter ? 'No records match the selected document filter.' : 'No records found in this collection.'}</p></div>
           ) : (
-            <table className="data-table">
+            <ConfigurableTable tableId="records-1" className="data-table">
               <thead>
                 <tr>
                   {columns.map((col) => (
@@ -205,7 +206,7 @@ function RecordsView({ embedded = false, scopeCollectionId = '' }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </ConfigurableTable>
           )}
         </div>
       )}

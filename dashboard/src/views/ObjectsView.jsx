@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -228,7 +229,7 @@ function ObjectsView({ embedded = false, scopeBucket = '' }) {
           ) : (prefixes.length === 0 && objects.length === 0) ? (
             <div className="empty-state"><p>{prefix ? 'This prefix is empty.' : 'This bucket is empty.'}</p></div>
           ) : (
-            <table className="data-table">
+            <ConfigurableTable tableId="objects-1" className="data-table">
               <thead>
                 <tr>
                   <th><Tooltip text="File or folder name within the bucket">Name</Tooltip></th>
@@ -283,7 +284,7 @@ function ObjectsView({ embedded = false, scopeBucket = '' }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </ConfigurableTable>
           )}
         </div>
       )}

@@ -1,3 +1,4 @@
+import ConfigurableTable from '../ConfigurableTable';
 import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal';
 import CopyButton from '../CopyButton';
@@ -182,7 +183,7 @@ function RequestPerformanceTable({ stages }) {
 
   return (
     <div className="history-stage-table-wrap">
-      <table className="history-stage-table">
+      <ConfigurableTable tableId="requesthistorydetail-1" className="history-stage-table">
         <thead>
           <tr>
             <th>Stage</th>
@@ -234,7 +235,7 @@ function RequestPerformanceTable({ stages }) {
             );
           })}
         </tbody>
-      </table>
+      </ConfigurableTable>
     </div>
   );
 }

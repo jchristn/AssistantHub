@@ -1,3 +1,4 @@
+import ConfigurableTable from '../ConfigurableTable';
 import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -9,7 +10,7 @@ const markdownComponents = {
     <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
   ),
   table: ({ children }) => (
-    <div className="feedback-md-table-wrap"><table className="feedback-md-table">{children}</table></div>
+    <div className="feedback-md-table-wrap"><ConfigurableTable tableId="feedback-1" className="feedback-md-table">{children}</ConfigurableTable></div>
   ),
 };
 

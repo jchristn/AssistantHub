@@ -238,3 +238,22 @@ postman collection run postman/CloudEndpointRegression.postman_collection.json -
 ```
 
 This collection uses an inactive test model and a dummy cloud token; it does not make model inference or cloud health-check requests. Use a disposable Partio database because it creates endpoint records before deleting them.
+
+
+### Dashboard column controls
+
+```bash
+node --test dashboard/src/utils/*.test.js dashboard/tests/*.test.mjs
+npm run build --prefix dashboard
+```
+
+The table coverage check rejects native tables outside `ConfigurableTable` and requires stable, unique preference IDs for every table location. Browser regression checks use real shared/list/Markdown/dialog tables with local fixture data, and require Chrome plus `playwright-core` installed as test tooling:
+
+```bash
+npm install --prefix /tmp/assistanthub-browser-tests playwright-core
+npm run dev --prefix dashboard -- --host 127.0.0.1 --port 15174
+# In another terminal:
+PLAYWRIGHT_MODULE=/tmp/assistanthub-browser-tests/node_modules/playwright-core/index.mjs node dashboard/tests/tableColumns.browser.mjs
+```
+
+Set `CHROME_EXECUTABLE` for your platform and optionally `TABLE_TEST_URL` for a different Vite host/port. The fixture verifies independent saved preferences, required-column protection even with tampered settings, new columns/rows, selection/actions, hidden-filter/sort cleanup, empty-row spans, Markdown, Escape inside dialogs, and blocked browser storage. It also captures desktop/mobile screenshots in `/tmp/assistanthub-columns-*.png`.

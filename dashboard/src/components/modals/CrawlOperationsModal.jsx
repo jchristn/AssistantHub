@@ -1,3 +1,4 @@
+import ConfigurableTable from '../ConfigurableTable';
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import CopyableId from '../CopyableId';
@@ -33,7 +34,7 @@ function OperationStatsModal({ operation, onClose }) {
     <Modal title="Operation Statistics" onClose={onClose} wide footer={
       <button className="btn btn-secondary" onClick={onClose}>Close</button>
     }>
-      <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+      <ConfigurableTable tableId="crawloperations-1" className="data-table" style={{ fontSize: '0.8125rem' }}>
         <thead>
           <tr>
             <th>Metric</th>
@@ -50,7 +51,7 @@ function OperationStatsModal({ operation, onClose }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </ConfigurableTable>
       <div style={{ marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
           <span>Start</span>
@@ -153,7 +154,7 @@ function CrawlOperationsModal({ api, plan, onClose }) {
         <div className="empty-state"><p>No operations found.</p></div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
+          <ConfigurableTable tableId="crawloperations-2" requiredColumns={["Status"]} className="data-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -191,7 +192,7 @@ function CrawlOperationsModal({ api, plan, onClose }) {
                 );
               })}
             </tbody>
-          </table>
+          </ConfigurableTable>
         </div>
       )}
 

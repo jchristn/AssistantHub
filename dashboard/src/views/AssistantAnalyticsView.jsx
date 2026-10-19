@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -481,7 +482,7 @@ function EndpointTable({ result }) {
 
   return (
     <div className="analytics-table-wrap">
-      <table className="analytics-table">
+      <ConfigurableTable tableId="assistantanalytics-1" className="analytics-table">
         <thead>
           <tr>
             <th>Endpoint</th>
@@ -515,7 +516,7 @@ function EndpointTable({ result }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </ConfigurableTable>
     </div>
   );
 }
@@ -548,7 +549,7 @@ function SlowestRequestsTable({ result, onOpenHistory, onOpenRequestHistory, can
 
   return (
     <div className="analytics-table-wrap">
-      <table className="analytics-table">
+      <ConfigurableTable tableId="assistantanalytics-2" requiredColumns={["Status"]} className="analytics-table">
         <thead>
           <tr>
             <th>Created</th>
@@ -594,7 +595,7 @@ function SlowestRequestsTable({ result, onOpenHistory, onOpenRequestHistory, can
             </tr>
           ))}
         </tbody>
-      </table>
+      </ConfigurableTable>
     </div>
   );
 }

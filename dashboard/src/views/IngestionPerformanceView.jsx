@@ -207,7 +207,7 @@ function IngestionPerformanceView() {
     { key: 'ingestionRuleId', label: 'Ingestion Rule', tooltip: 'Ingestion rule applied', filterable: true, render: (row) => (row.ingestionRuleId ? <CopyableId id={row.ingestionRuleId} /> : '—') },
     { key: 'stageCount', label: 'Stages', tooltip: 'Number of timed pipeline stages', render: (row) => row.stageCount },
     { key: 'totalMs', label: 'Total Duration', tooltip: 'Sum of stage durations', render: (row) => formatDuration(row.totalMs) },
-    { key: 'success', label: 'Status', tooltip: 'Whether all stages succeeded', render: (row) => <span className={`status-badge ${row.success ? 'active' : 'failed'}`}>{row.success ? 'OK' : 'Failed'}</span> },
+    { key: 'success', required: true, label: 'Status', tooltip: 'Whether all stages succeeded', render: (row) => <span className={`status-badge ${row.success ? 'active' : 'failed'}`}>{row.success ? 'OK' : 'Failed'}</span> },
     { key: 'completedUtc', label: 'Completed', tooltip: 'When the last stage finished', render: (row) => formatWhen(row.completedUtc) },
   ];
 
@@ -291,7 +291,7 @@ function IngestionPerformanceView() {
 
           <section className="analytics-panel">
             <div className="analytics-panel-header"><div><h2>Recent Ingestions</h2></div></div>
-            <DataTable columns={columns} fetchData={fetchTableData} getRowActions={getRowActions} refreshTrigger={nonce} />
+            <DataTable tableId="ingestionperformance-list-1" columns={columns} fetchData={fetchTableData} getRowActions={getRowActions} refreshTrigger={nonce} />
           </section>
         </>
       )}

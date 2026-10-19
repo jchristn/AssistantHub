@@ -154,7 +154,7 @@ function HistoryView({ embedded = false, scopeAssistantId = '' }) {
           />
         </div>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => setViewHistory(row)} />
+      <DataTable tableId="history-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => setViewHistory(row)} />
       {viewHistory && <HistoryViewModal history={viewHistory} onClose={() => setViewHistory(null)} />}
       {showJson && <JsonViewModal title="History JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete History" message="Are you sure you want to delete this history entry? This action cannot be undone." confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

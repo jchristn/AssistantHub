@@ -1,0 +1,16 @@
+.configurable-table { min-width: 0; max-width: 100%; }
+.configurable-table > table { width: 100%; min-width: 0; }
+.configurable-table > table > :is(thead, tbody, tfoot) > tr > [data-column-hidden],
+.configurable-table > table > tr > [data-column-hidden] { display: none !important; }
+.column-controls { display: flex; justify-content: flex-end; margin: 0.4rem 0; font-size: 0.8125rem; }
+.column-controls details { width: min(100%, 24rem); }
+.column-controls summary { margin-left: auto; width: fit-content; padding: 0.35rem 0.65rem; cursor: pointer; border: 1px solid var(--border-color, #ccc); border-radius: 4px; color: var(--text-primary, inherit); background: var(--bg-secondary, transparent); }
+.column-controls summary:focus-visible { outline: 2px solid var(--primary-color, #2563eb); outline-offset: 2px; }
+.column-controls summary span { color: var(--text-secondary, #666); }
+.column-options { margin: 0.5rem 0; padding: 0.75rem; max-height: 20rem; overflow-y: auto; border: 1px solid var(--border-color, #ccc); border-radius: 4px; background: var(--bg-primary, transparent); }
+.column-options legend { padding: 0 0.25rem; }
+.column-options label { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; cursor: pointer; white-space: normal; color: var(--text-primary, inherit); }
+.column-options input[type="checkbox"] { width: auto; margin: 0; flex: 0 0 auto; }
+.column-options label > span { min-width: 0; overflow-wrap: anywhere; }
+.column-options small { flex-shrink: 0; margin-left: auto; color: var(--text-secondary, #666); }
+.column-options button { margin-top: 0.5rem; font-size: inherit; }

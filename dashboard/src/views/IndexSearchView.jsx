@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -333,7 +334,7 @@ function IndexSearchView({ embedded = false, scopeIndexId = '' }) {
         ) : filteredResults.length === 0 ? (
           <div className="empty-state"><p>No search results.</p></div>
         ) : (
-          <table className="data-table artifact-index-search-table">
+          <ConfigurableTable tableId="indexsearch-1" className="data-table artifact-index-search-table">
             <thead>
               <tr>
                 <th title="Verbex record identifier.">Record</th>
@@ -365,7 +366,7 @@ function IndexSearchView({ embedded = false, scopeIndexId = '' }) {
                 );
               })}
             </tbody>
-          </table>
+          </ConfigurableTable>
         )}
       </div>
 
@@ -468,7 +469,7 @@ function IndexSearchView({ embedded = false, scopeIndexId = '' }) {
                 {termDetails.length > 0 && (
                   <div className="artifact-detail-section">
                     <h4>Term Details</h4>
-                    <table className="data-table">
+                    <ConfigurableTable tableId="indexsearch-2" className="data-table">
                       <thead><tr><th>Term</th><th>Score</th><th>Frequency</th></tr></thead>
                       <tbody>
                         {termDetails.map((term, index) => (
@@ -479,7 +480,7 @@ function IndexSearchView({ embedded = false, scopeIndexId = '' }) {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </ConfigurableTable>
                   </div>
                 )}
                 <div className="artifact-detail-section">

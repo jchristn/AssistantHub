@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
@@ -119,7 +120,7 @@ function EvaluationView({ embedded = false, scopeAssistantId = '' }) {
   const runsColumns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique run identifier', render: (row) => <CopyableId id={row.Id} /> },
     { key: 'CreatedUtc', label: 'Date', tooltip: 'When the run was started', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
-    { key: 'Status', label: 'Status', tooltip: 'Current run status', render: (row) => <StatusBadge status={row.Status} /> },
+    { key: 'Status', required: true, label: 'Status', tooltip: 'Current run status', render: (row) => <StatusBadge status={row.Status} /> },
     { key: 'ExecutionMode', label: 'Mode', tooltip: 'Execution mode used for the run', render: (row) => row.ExecutionMode || 'ChatRail' },
     { key: 'Facts', label: 'Facts', tooltip: 'Passed / Failed / Total', render: (row) => (
       <span>
@@ -283,7 +284,7 @@ function EvaluationView({ embedded = false, scopeAssistantId = '' }) {
               Add Fact
             </button>
           </div>
-          <DataTable columns={factsColumns} fetchData={fetchFacts} getRowActions={getFactActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteFacts} onRowClick={(row) => setFactModal({ mode: 'edit', fact: row })} />
+          <DataTable tableId="evaluation-list-1" columns={factsColumns} fetchData={fetchFacts} getRowActions={getFactActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteFacts} onRowClick={(row) => setFactModal({ mode: 'edit', fact: row })} />
         </div>
       )}
 
@@ -298,7 +299,7 @@ function EvaluationView({ embedded = false, scopeAssistantId = '' }) {
               Start New Run
             </button>
           </div>
-          <DataTable columns={runsColumns} fetchData={fetchRuns} getRowActions={getRunActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteRuns} onRowClick={(row) => loadRunResults(row)} />
+          <DataTable tableId="evaluation-list-2" columns={runsColumns} fetchData={fetchRuns} getRowActions={getRunActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteRuns} onRowClick={(row) => loadRunResults(row)} />
         </div>
       )}
 
@@ -659,7 +660,7 @@ function RunResultsModal({ run, results, onClose, onViewDetail }) {
       </div>
 
       <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+        <ConfigurableTable tableId="evaluation-1" requiredColumns={["Result"]} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead>
             <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
               <th style={{ padding: '0.5rem' }}>Question</th>
@@ -697,7 +698,7 @@ function RunResultsModal({ run, results, onClose, onViewDetail }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </ConfigurableTable>
       </div>
     </Modal>
   );

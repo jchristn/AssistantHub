@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -202,7 +203,7 @@ function IndicesView() {
         </form>
       )}
 
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onRowClick={setDetailTarget} />
+      <DataTable tableId="indices-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onRowClick={setDetailTarget} />
 
       {detailTarget && (
         <Modal title="Index Details" onClose={() => setDetailTarget(null)} wide>
@@ -266,7 +267,7 @@ function IndicesView() {
           {topTerms.terms.length < 1 ? (
             <pre className="json-view compact">{JSON.stringify(topTerms.result, null, 2)}</pre>
           ) : (
-            <table className="data-table">
+            <ConfigurableTable tableId="indices-1" className="data-table">
               <thead><tr><th>Term</th><th>Frequency</th><th>Score</th></tr></thead>
               <tbody>
                 {topTerms.terms.map((term, index) => (
@@ -277,7 +278,7 @@ function IndicesView() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </ConfigurableTable>
           )}
         </Modal>
       )}

@@ -1,3 +1,4 @@
+import ConfigurableTable from './ConfigurableTable';
 import React, { useState, useEffect, useRef } from 'react';
 import { ApiClient } from '../utils/api';
 import ReactMarkdown from 'react-markdown';
@@ -919,7 +920,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
           <span className="chat-tool-trace-count">{callCountLabel}</span>
         </summary>
         <div className="chat-tool-trace-table-wrap">
-          <table className="chat-tool-trace-table">
+          <ConfigurableTable tableId="chatpanel-1" requiredColumns={["Status"]} className="chat-tool-trace-table">
             <thead>
               <tr>
                 <th>Tool</th>
@@ -953,7 +954,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                 );
               })}
             </tbody>
-          </table>
+          </ConfigurableTable>
         </div>
       </details>
     );
@@ -1126,7 +1127,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     table({ children }) {
       return (
         <div className="chat-table-wrapper">
-          <table className="chat-md-table">{children}</table>
+          <ConfigurableTable tableId="chatpanel-2" className="chat-md-table">{children}</ConfigurableTable>
         </div>
       );
     },

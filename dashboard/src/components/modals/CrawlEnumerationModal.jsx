@@ -1,3 +1,4 @@
+import ConfigurableTable from '../ConfigurableTable';
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import CopyButton from '../CopyButton';
@@ -73,7 +74,7 @@ function EnumerationSection({ title, files, totalBytes }) {
       </button>
       {expanded && items.length > 0 && (
         <div className="collapsible-section-body">
-          <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+          <ConfigurableTable tableId="crawlenumeration-1" className="data-table" style={{ fontSize: '0.8125rem' }}>
             <thead>
               <tr>
                 <th>Key / URL</th>
@@ -94,7 +95,7 @@ function EnumerationSection({ title, files, totalBytes }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ConfigurableTable>
         </div>
       )}
       {expanded && items.length === 0 && (

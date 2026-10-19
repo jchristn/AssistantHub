@@ -11,6 +11,8 @@
 - **Package updates**: EasySlack 1.1.2, Voltaic 2.2.1 and Timestamps 1.0.13. EasySlack 1.1.2 fixes automatic reconnects: it runs one receive loop per connection, retries a failed reconnect with backoff, and cancels a pending reconnect when the connector is stopped. Voltaic 2.2.1 updates only its dependencies, with no API or behavior changes.
 
 ### Added
+- A Columns control on every AssistantHub dashboard table, including standalone search/analytics tables, dialogs, chat tool activity, and Markdown tables. Browser preferences persist per table; identifying, selection, action, and designated outcome columns remain required. Supports changing table schemas, new rows, empty-state spans, keyboard dismissal, and storage restrictions. List tables clear filters/sorting for hidden columns.
+- Automated table-coverage and preference tests plus a Chrome regression fixture covering column visibility, persistence, required columns, filtering/sorting, actions, dialogs, and Markdown.
 - Ollama Cloud (`OllamaCloud`) and Grok / xAI (`xAI`) configuration throughout the setup wizard, endpoint forms, inference settings, REST/OpenAPI, MCP management, and all SDKs. Includes authenticated model discovery, provider health defaults, chat/streaming/tool routing, provider telemetry identity, and cloud lifecycle restrictions.
 - Cloud provider regression tests and a local Postman simulation for authenticated discovery, chat, and streaming.
 - A Service suite test that checks a Slack connector with `AutoReconnect` stops and disposes promptly without having been started.

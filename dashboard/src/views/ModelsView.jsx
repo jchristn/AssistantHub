@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
@@ -214,7 +215,7 @@ function ModelsView() {
         ) : models.length === 0 ? (
           <div className="empty-state"><p>No models found.</p></div>
         ) : (
-          <table className="data-table">
+          <ConfigurableTable tableId="models-1" className="data-table">
             <thead>
               <tr>
                 <th><Tooltip text="Model identifier (e.g. gpt-4o, gemma3:4b)">Name</Tooltip></th>
@@ -239,7 +240,7 @@ function ModelsView() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ConfigurableTable>
         )}
       </div>
       {showPull && (

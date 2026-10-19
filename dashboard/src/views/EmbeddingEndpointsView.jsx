@@ -167,7 +167,7 @@ function EmbeddingEndpointsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditEndpoint(null); setInitialFormData(null); setShowForm(true); }}>Create Embedding Endpoint</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
+      <DataTable tableId="embeddingendpoints-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
       {showForm && <EmbeddingEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
       {testTarget && <EmbeddingEndpointTestModal api={api} endpoint={testTarget} onClose={() => setTestTarget(null)} />}
       {loadTarget && <EndpointModelLoadModal api={api} endpoint={loadTarget} endpointType="embedding" onClose={() => setLoadTarget(null)} />}

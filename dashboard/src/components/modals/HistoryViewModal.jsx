@@ -1,3 +1,4 @@
+import ConfigurableTable from '../ConfigurableTable';
 import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../Modal';
 import CopyableId from '../CopyableId';
@@ -278,7 +279,7 @@ function StageTable({ stages }) {
 
   return (
     <div className="history-stage-table-wrap">
-      <table className="history-stage-table">
+      <ConfigurableTable tableId="history-1" className="history-stage-table">
         <thead>
           <tr>
             {Object.keys(stageColumnTooltips).map((column) => (
@@ -331,7 +332,7 @@ function StageTable({ stages }) {
             );
           })}
         </tbody>
-      </table>
+      </ConfigurableTable>
     </div>
   );
 }

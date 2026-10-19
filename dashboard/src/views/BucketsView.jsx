@@ -73,7 +73,7 @@ function BucketsView() {
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(true)}>Create Bucket</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable tableId="buckets-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {showForm && <BucketFormModal onSave={handleSave} onClose={() => setShowForm(false)} />}
       {showJson && <JsonViewModal title="Bucket JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Bucket" message={`Are you sure you want to delete bucket "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

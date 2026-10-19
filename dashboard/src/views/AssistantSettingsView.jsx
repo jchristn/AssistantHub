@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -1480,7 +1481,7 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                     {(inspectResult.stages || []).map((stage, i) => (
                       <details key={i} open={i === (inspectResult.stages || []).length - 1}>
                         <summary>{stage.stage} - {(stage.chunks || []).length} chunks{stage.query ? ` - "${stage.query}"` : ''}</summary>
-                        <table className="data-table">
+                        <ConfigurableTable tableId="assistantsettings-1" className="data-table">
                           <thead><tr><th>#</th><th>Document</th><th>Score</th><th>Source</th><th>Content</th></tr></thead>
                           <tbody>
                             {(stage.chunks || []).map((c, j) => (
@@ -1493,7 +1494,7 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                               </tr>
                             ))}
                           </tbody>
-                        </table>
+                        </ConfigurableTable>
                       </details>
                     ))}
                   </div>

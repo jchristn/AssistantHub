@@ -479,6 +479,7 @@ function RequestHistoryView() {
     {
       key: 'StatusCode',
       label: 'Status',
+      required: true,
       tooltip: 'HTTP response status code',
       render: (row) => <span className={`status-badge ${row.Success ? 'active' : 'failed'}`}>{row.StatusCode}</span>,
     },
@@ -694,7 +695,7 @@ function RequestHistoryView() {
         <RequestHistorySummaryChart buckets={summary?.Buckets || []} rangeId={summaryRangeId} rangeWindow={summaryRangeWindow} />
       </div>
 
-      <DataTable
+      <DataTable tableId="requesthistory-list-1"
         columns={columns}
         fetchData={fetchData}
         getRowActions={getRowActions}

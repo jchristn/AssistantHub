@@ -167,7 +167,7 @@ function InferenceEndpointsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditEndpoint(null); setInitialFormData(null); setShowForm(true); }}>Create Inference Endpoint</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
+      <DataTable tableId="inferenceendpoints-list-1" columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
       {showForm && <InferenceEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
       {testTarget && <InferenceEndpointTestModal api={api} endpoint={testTarget} onClose={() => setTestTarget(null)} />}
       {loadTarget && <EndpointModelLoadModal api={api} endpoint={loadTarget} endpointType="completion" onClose={() => setLoadTarget(null)} />}

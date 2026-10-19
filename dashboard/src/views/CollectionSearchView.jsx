@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -378,7 +379,7 @@ function CollectionSearchView({ embedded = false, scopeCollectionId = '' }) {
         ) : filteredResults.length === 0 ? (
           <div className="empty-state"><p>No search results.</p></div>
         ) : (
-          <table className="data-table">
+          <ConfigurableTable tableId="collectionsearch-1" className="data-table">
             <thead>
               <tr>
                 <th>Document ID</th>
@@ -400,7 +401,7 @@ function CollectionSearchView({ embedded = false, scopeCollectionId = '' }) {
                 );
               })}
             </tbody>
-          </table>
+          </ConfigurableTable>
         )}
       </div>
 

@@ -9,7 +9,7 @@ export function normalizePageSize(value, fallback = 10) {
 }
 
 export function getStoredPageSize(fallback = 10) {
-  if (typeof window === 'undefined' || !window.localStorage) return normalizePageSize(fallback);
+  if (typeof window === 'undefined') return normalizePageSize(fallback);
 
   try {
     return normalizePageSize(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY), fallback);
@@ -20,7 +20,7 @@ export function getStoredPageSize(fallback = 10) {
 
 export function setStoredPageSize(size, fallback = 10) {
   const normalized = normalizePageSize(size, fallback);
-  if (typeof window === 'undefined' || !window.localStorage) return normalized;
+  if (typeof window === 'undefined') return normalized;
 
   try {
     window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(normalized));

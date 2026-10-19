@@ -1,3 +1,4 @@
+import ConfigurableTable from '../components/ConfigurableTable';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -312,7 +313,7 @@ function IndexRecordsView({ embedded = false, scopeIndexId = '' }) {
         ) : records.length === 0 ? (
           <div className="empty-state"><p>No records found in this index.</p></div>
         ) : (
-          <table className="data-table">
+          <ConfigurableTable tableId="indexrecords-1" className="data-table">
             <thead>
               <tr>
                 <th style={{ width: '2.5rem', textAlign: 'center' }}><input type="checkbox" checked={selectedAll} onChange={toggleAll} /></th>
@@ -352,7 +353,7 @@ function IndexRecordsView({ embedded = false, scopeIndexId = '' }) {
                 );
               })}
             </tbody>
-          </table>
+          </ConfigurableTable>
         )}
       </div>
 

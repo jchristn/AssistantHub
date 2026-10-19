@@ -1,3 +1,4 @@
+import ConfigurableTable from './ConfigurableTable';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Pagination from './Pagination';
 import ActionMenu from './ActionMenu';
@@ -25,7 +26,7 @@ const extractRows = (result) => {
   return candidates.find((candidate) => Array.isArray(candidate)) || [];
 };
 
-function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete, onRowClick }) {
+function DataTable({ tableId, columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete, onRowClick }) {
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getStoredPageSize(10));
@@ -34,6 +35,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   const [refreshState, setRefreshState] = useState('idle');
   const [filters, setFilters] = useState(initialFilters || {});
   const [sortKey, setSortKey] = useState(null);
+  const [hiddenColumnKeys, setHiddenColumnKeys] = useState([]);
   const [sortDirection, setSortDirection] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -58,7 +60,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   useEffect(() => { loadData(); }, [loadData, refreshTrigger]);
 
   useEffect(() => {
-    setFilters(initialFilters || {});
+    setFilters(Object.fromEntries(Object.entries(initialFilters || {}).filter(([key]) => !hiddenColumnKeys.includes(key))));
     setCurrentPage(1);
   }, [initialFilters]);
 
@@ -70,6 +72,18 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   useEffect(() => {
     setCurrentPage(1);
   }, [filters]);
+
+  // A hidden filter must not silently exclude records the user cannot inspect.
+  useEffect(() => {
+    setFilters(previous => {
+      const next = Object.fromEntries(Object.entries(previous).filter(([key]) => !hiddenColumnKeys.includes(key)));
+      return Object.keys(next).length === Object.keys(previous).length ? previous : next;
+    });
+    if (hiddenColumnKeys.includes(sortKey)) {
+      setSortKey(null);
+      setSortDirection(null);
+    }
+  }, [hiddenColumnKeys, sortKey]);
 
   const filteredData = useMemo(() => {
     return allData.filter(row => {
@@ -209,7 +223,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
       ) : allData.length === 0 ? (
         <div className="empty-state"><p>No records found.</p></div>
       ) : (
-        <table className="data-table">
+        <ConfigurableTable tableId={tableId} onColumnVisibilityChange={setHiddenColumnKeys} className="data-table">
           <thead>
             <tr>
               {onBulkDelete && (
@@ -218,7 +232,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
                 </th>
               )}
               {columns.map((col) => (
-                <th key={col.key} style={col.style} onClick={() => handleSort(col.key)}>
+                <th key={col.key} data-column-key={col.key} data-column-required={col.required || undefined} style={col.style} onClick={() => handleSort(col.key)}>
                   <span className="th-content">
                     <Tooltip text={col.tooltip}>{col.label}</Tooltip>
                     {sortKey === col.key && (
@@ -287,7 +301,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
               );
             })}
           </tbody>
-        </table>
+        </ConfigurableTable>
       )}
       {bulkDeleteConfirm && (
         <ConfirmModal

@@ -1,0 +1,5 @@
+simulation: cloud-providers
+routing: path
+mocks:
+  - routeKey: providers
+    path: ../mocks/cloud-providers/config.yaml

@@ -1,4 +1,4 @@
-export const API_FORMAT_OPTIONS = ['Ollama', 'OpenAI', 'Gemini'];
+export const API_FORMAT_OPTIONS = ['Ollama', 'OllamaCloud', 'OpenAI', 'xAI', 'Gemini'];
 export const HEALTH_CHECK_METHOD_OPTIONS = ['GET', 'POST', 'HEAD'];
 
 // Default per-endpoint request timeout (distinct from the health check timeout), in milliseconds.
@@ -46,6 +46,22 @@ const FORMAT_DEFAULTS = {
   }
 };
 
+FORMAT_DEFAULTS.OllamaCloud = {
+  ...FORMAT_DEFAULTS.Ollama,
+  Endpoint: 'https://ollama.com',
+  DefaultEmbeddingModel: '',
+  DefaultInferenceModel: '',
+  HealthCheckUseAuth: true,
+  HealthCheckIntervalMs: 30000,
+  HealthCheckTimeoutMs: 10000
+};
+FORMAT_DEFAULTS.xAI = {
+  ...FORMAT_DEFAULTS.OpenAI,
+  Endpoint: 'https://api.x.ai',
+  DefaultEmbeddingModel: '',
+  DefaultInferenceModel: 'grok-4'
+};
+
 function trimTrailingSlash(value) {
   return (value || '').replace(/\/+$/, '');
 }
@@ -78,6 +94,7 @@ export function getDefaultHealthCheckUrl(endpoint, apiFormat = 'Ollama') {
   if (!endpoint) return '';
 
   switch (apiFormat) {
+    case 'xAI':
     case 'OpenAI':
       return appendVersionedPath(endpoint, '/v1', '/models');
     case 'Gemini':
@@ -146,4 +163,8 @@ export function getDefaultModel(apiFormat = 'Ollama', endpointType = 'inference'
   return endpointType === 'embedding'
     ? defaults.DefaultEmbeddingModel
     : defaults.DefaultInferenceModel;
+}
+
+export function getDefaultToolCallingApiFormat(apiFormat) {
+  return ['Ollama', 'OllamaCloud'].includes(apiFormat) ? 'OllamaChat' : 'OpenAIChatCompletions';
 }

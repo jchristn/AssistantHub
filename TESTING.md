@@ -208,3 +208,15 @@ Optional environment variables:
 
 - `ASSISTANTHUB_URL` default: `http://localhost:6600`
 - `ASSISTANTHUB_API_KEY` default: `default`
+
+
+### Cloud provider transport checks
+
+Run `postman simulation run postman/simulations/cloud-providers.sim.yaml --port 4917 --output ndjson`, then in another terminal:
+
+```bash
+ASSISTANTHUB_TEST_SUITES=model,service ASSISTANTHUB_PROVIDER_SIMULATION_URL=http://127.0.0.1:4917/providers dotnet run --project src/Test.Automated
+node --test dashboard/src/utils/endpointDefaults.test.js
+```
+
+The local mock follows native Ollama `/api/tags` and `/api/chat`, and xAI's OpenAI-compatible `/v1/models` and `/v1/chat/completions` contracts. It requires a dummy bearer token and validates model/messages. Discovery and buffered/streamed chat run over real HTTP. This checks AssistantHub's transport against stand-ins; live provider accounts and model availability are not tested. An owner-provided mock was not searched because the Postman CLI is signed out.

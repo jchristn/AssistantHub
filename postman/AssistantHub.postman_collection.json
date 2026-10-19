@@ -2799,6 +2799,60 @@
               ]
             }
           }
+        },
+        {
+          "name": "Create Completion Endpoint (OllamaCloud)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"OllamaCloud Completion Endpoint\",\n\t\"Model\": \"{{OllamaCloudModel}}\",\n\t\"Endpoint\": \"https://ollama.com\",\n\t\"ApiFormat\": \"OllamaCloud\",\n\t\"Active\": true,\n\t\"Labels\": [\n\t\t\"local\",\n\t\t\"inference\"\n\t],\n\t\"Tags\": {\n\t\t\"owner\": \"assistant-team\"\n\t},\n\t\"SupportsToolCalling\": true,\n\t\"ToolCallingApiFormat\": \"OllamaChat\",\n\t\"SupportsParallelToolCalls\": false,\n\t\"SupportsStreamingToolCalls\": false,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://ollama.com/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true,\n\t\"ApiKey\": \"{{OllamaCloudApiKey}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/endpoints/completion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "endpoints",
+                "completion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Completion Endpoint (xAI)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"xAI Completion Endpoint\",\n\t\"Model\": \"{{xAIModel}}\",\n\t\"Endpoint\": \"https://api.x.ai\",\n\t\"ApiFormat\": \"xAI\",\n\t\"Active\": true,\n\t\"Labels\": [\n\t\t\"local\",\n\t\t\"inference\"\n\t],\n\t\"Tags\": {\n\t\t\"owner\": \"assistant-team\"\n\t},\n\t\"SupportsToolCalling\": true,\n\t\"ToolCallingApiFormat\": \"OpenAIChatCompletions\",\n\t\"SupportsParallelToolCalls\": false,\n\t\"SupportsStreamingToolCalls\": false,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://api.x.ai/v1/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true,\n\t\"ApiKey\": \"{{xAIApiKey}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/endpoints/completion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "endpoints",
+                "completion"
+              ]
+            }
+          }
         }
       ]
     },

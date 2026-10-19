@@ -36402,7 +36402,9 @@
             "enum": [
               "OpenAI",
               "Ollama",
-              "Gemini"
+              "Gemini",
+              "OllamaCloud",
+              "xAI"
             ]
           },
           "Endpoint": {

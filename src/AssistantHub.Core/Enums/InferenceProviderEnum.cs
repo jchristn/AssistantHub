@@ -25,6 +25,14 @@ namespace AssistantHub.Core.Enums
         /// Gemini.
         /// </summary>
         [EnumMember(Value = "Gemini")]
-        Gemini
+        Gemini,
+
+        /// <summary>Ollama Cloud using the native Ollama API.</summary>
+        [EnumMember(Value = "OllamaCloud")]
+        OllamaCloud,
+
+        /// <summary>xAI Grok using OpenAI-compatible chat completions.</summary>
+        [EnumMember(Value = "xAI")]
+        xAI
     }
 }

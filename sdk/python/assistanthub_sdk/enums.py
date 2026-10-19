@@ -90,6 +90,8 @@ class InferenceProvider(str, Enum):
     OPENAI = "OpenAI"
     OLLAMA = "Ollama"
     GEMINI = "Gemini"
+    OLLAMA_CLOUD = "OllamaCloud"
+    XAI = "xAI"
 
 
 class RepositoryType(str, Enum):

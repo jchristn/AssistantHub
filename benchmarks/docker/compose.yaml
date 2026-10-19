@@ -111,7 +111,7 @@ services:
     restart: unless-stopped
 
   partio:
-    image: jchristn77/partio-server:v0.5.0
+    image: jchristn77/partio-server:v0.5.1
     container_name: assistanthub-bench-partio
     ports:
       - "127.0.0.1:38321:8400"

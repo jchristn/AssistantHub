@@ -39,6 +39,11 @@ namespace AssistantHub.Core.Helpers
             if (apiFormat.Equals("Ollama", StringComparison.OrdinalIgnoreCase))
                 return InferenceProviderEnum.Ollama;
 
+            if (apiFormat.Equals("OllamaCloud", StringComparison.OrdinalIgnoreCase))
+                return InferenceProviderEnum.OllamaCloud;
+            if (apiFormat.Equals("xAI", StringComparison.OrdinalIgnoreCase) || apiFormat.Equals("Grok", StringComparison.OrdinalIgnoreCase))
+                return InferenceProviderEnum.xAI;
+
             return fallback;
         }
 
@@ -51,6 +56,10 @@ namespace AssistantHub.Core.Helpers
         {
             switch (provider)
             {
+                case InferenceProviderEnum.OllamaCloud:
+                    return "https://ollama.com";
+                case InferenceProviderEnum.xAI:
+                    return "https://api.x.ai";
                 case InferenceProviderEnum.OpenAI:
                     return "https://api.openai.com/v1";
                 case InferenceProviderEnum.Gemini:
@@ -71,6 +80,7 @@ namespace AssistantHub.Core.Helpers
         {
             switch (provider)
             {
+                case InferenceProviderEnum.xAI:
                 case InferenceProviderEnum.OpenAI:
                     return AppendVersionedPath(endpoint, "/v1", "/models");
                 case InferenceProviderEnum.Gemini:
@@ -114,6 +124,7 @@ namespace AssistantHub.Core.Helpers
         {
             switch (provider)
             {
+                case InferenceProviderEnum.xAI:
                 case InferenceProviderEnum.OpenAI:
                     return AppendVersionedPath(endpoint, "/v1", "/chat/completions");
                 case InferenceProviderEnum.Gemini:

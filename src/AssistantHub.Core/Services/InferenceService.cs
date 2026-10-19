@@ -83,9 +83,11 @@ namespace AssistantHub.Core.Services
             {
                 switch (_Settings.Provider)
                 {
+                    case InferenceProviderEnum.OllamaCloud:
                     case InferenceProviderEnum.Ollama:
                         return await ListOllamaModelsAsync().ConfigureAwait(false);
 
+                    case InferenceProviderEnum.xAI:
                     case InferenceProviderEnum.OpenAI:
                         return await ListOpenAIModelsAsync().ConfigureAwait(false);
 
@@ -341,6 +343,7 @@ namespace AssistantHub.Core.Services
 
                     switch (provider)
                     {
+                        case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             result = await GenerateOpenAIResponseAsync(
                                 fullSystemMessage,
@@ -354,6 +357,7 @@ namespace AssistantHub.Core.Services
                                 token).ConfigureAwait(false);
                             break;
 
+                        case InferenceProviderEnum.OllamaCloud:
                         case InferenceProviderEnum.Ollama:
                             result = await GenerateOllamaResponseAsync(
                                 fullSystemMessage,
@@ -386,6 +390,11 @@ namespace AssistantHub.Core.Services
                     }
 
                     RecordInferenceTokensFromResult(provider, effectiveModel, result);
+                    if (result?.Telemetry != null)
+                    {
+                        result.Telemetry.Provider = provider.ToString();
+                        result.Telemetry.ApiFormat = provider.ToString();
+                    }
                     return result;
                 }
                 catch (Exception e)
@@ -440,12 +449,14 @@ namespace AssistantHub.Core.Services
 
                     switch (provider)
                     {
+                        case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             result = await GenerateOpenAIResponseFromMessagesAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
                                 effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
                             break;
 
+                        case InferenceProviderEnum.OllamaCloud:
                         case InferenceProviderEnum.Ollama:
                             result = await GenerateOllamaResponseFromMessagesAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
@@ -464,6 +475,11 @@ namespace AssistantHub.Core.Services
                     }
 
                     RecordInferenceTokensFromResult(provider, effectiveModel, result);
+                    if (result?.Telemetry != null)
+                    {
+                        result.Telemetry.Provider = provider.ToString();
+                        result.Telemetry.ApiFormat = provider.ToString();
+                    }
                     return result;
                 }
                 catch (Exception e)
@@ -550,12 +566,14 @@ namespace AssistantHub.Core.Services
 
                     switch (provider)
                     {
+                        case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             result = await GenerateOpenAIResponseWithToolsFromMessagesAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
                                 effectiveEndpoint, effectiveApiKey, tools, toolChoice, token).ConfigureAwait(false);
                             break;
 
+                        case InferenceProviderEnum.OllamaCloud:
                         case InferenceProviderEnum.Ollama:
                             result = await GenerateOllamaResponseWithToolsFromMessagesAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
@@ -568,6 +586,11 @@ namespace AssistantHub.Core.Services
                     }
 
                     RecordInferenceTokensFromResult(provider, effectiveModel, result);
+                    if (result?.Telemetry != null)
+                    {
+                        result.Telemetry.Provider = provider.ToString();
+                        result.Telemetry.ApiFormat = provider.ToString();
+                    }
                     return result;
                 }
                 catch (Exception e)
@@ -635,25 +658,42 @@ namespace AssistantHub.Core.Services
                 {
                     switch (provider)
                     {
+                        case InferenceProviderEnum.xAI:
                         case InferenceProviderEnum.OpenAI:
                             await GenerateOpenAIStreamingAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
                                 effectiveEndpoint, effectiveApiKey,
-                                onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                                onDelta, onComplete, onError, onConnectionEstablished, stage =>
+                                {
+                                    stage.Provider = provider.ToString();
+                                    stage.ApiFormat = provider.ToString();
+                                    onTelemetry?.Invoke(stage);
+                                }, token, onThinkingDelta).ConfigureAwait(false);
                             break;
 
+                        case InferenceProviderEnum.OllamaCloud:
                         case InferenceProviderEnum.Ollama:
                             await GenerateOllamaStreamingAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
                                 effectiveEndpoint, effectiveApiKey,
-                                onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                                onDelta, onComplete, onError, onConnectionEstablished, stage =>
+                                {
+                                    stage.Provider = provider.ToString();
+                                    stage.ApiFormat = provider.ToString();
+                                    onTelemetry?.Invoke(stage);
+                                }, token, onThinkingDelta).ConfigureAwait(false);
                             break;
 
                         case InferenceProviderEnum.Gemini:
                             await GenerateGeminiStreamingAsync(
                                 messages, effectiveModel, maxTokens, temperature, topP,
                                 effectiveEndpoint, effectiveApiKey,
-                                onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                                onDelta, onComplete, onError, onConnectionEstablished, stage =>
+                                {
+                                    stage.Provider = provider.ToString();
+                                    stage.ApiFormat = provider.ToString();
+                                    onTelemetry?.Invoke(stage);
+                                }, token, onThinkingDelta).ConfigureAwait(false);
                             break;
 
                         default:

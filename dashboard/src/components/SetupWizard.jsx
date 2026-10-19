@@ -310,6 +310,10 @@ function SetupWizard({ onClose }) {
   };
 
   const handleCreate = async () => {
+    if ((step === 0 || step === 1) && ['OllamaCloud', 'xAI'].includes(form.ApiFormat) && !form.ApiKey?.trim()) {
+      setError('An API key is required for this cloud provider.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -531,11 +535,13 @@ function SetupWizard({ onClose }) {
               <select value={form.ApiFormat || 'Ollama'} onChange={e => setEndpointField('ApiFormat', e.target.value)}>
                 <option value="Ollama">Ollama</option>
                 <option value="OpenAI">OpenAI</option>
+                <option value="OllamaCloud">Ollama Cloud</option>
+                <option value="xAI">Grok / xAI</option>
                 <option value="Gemini">Gemini</option>
               </select>
             </div>
             <div className="form-group">
-              <label>API Key (optional)</label>
+              <label>API Key {['OllamaCloud', 'xAI'].includes(form.ApiFormat) ? '(required)' : '(optional)'}</label>
               <PasswordInput value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
             </div>
           </div>
@@ -560,11 +566,13 @@ function SetupWizard({ onClose }) {
               <select value={form.ApiFormat || 'Ollama'} onChange={e => setEndpointField('ApiFormat', e.target.value)}>
                 <option value="Ollama">Ollama</option>
                 <option value="OpenAI">OpenAI</option>
+                <option value="OllamaCloud">Ollama Cloud</option>
+                <option value="xAI">Grok / xAI</option>
                 <option value="Gemini">Gemini</option>
               </select>
             </div>
             <div className="form-group">
-              <label>API Key (optional)</label>
+              <label>API Key {['OllamaCloud', 'xAI'].includes(form.ApiFormat) ? '(required)' : '(optional)'}</label>
               <PasswordInput value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
             </div>
           </div>

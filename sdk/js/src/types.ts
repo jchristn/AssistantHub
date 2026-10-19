@@ -40,6 +40,8 @@ export const InferenceProvider = {
   OpenAI: "OpenAI",
   Ollama: "Ollama",
   Gemini: "Gemini",
+  OllamaCloud: "OllamaCloud",
+  xAI: "xAI",
 } as const;
 export type InferenceProvider = (typeof InferenceProvider)[keyof typeof InferenceProvider];
 
@@ -137,6 +139,8 @@ export type EnumerationOrder = (typeof EnumerationOrder)[keyof typeof Enumeratio
 export const ApiFormat = {
   OpenAI: "OpenAI",
   Gemini: "Gemini",
+  OllamaCloud: "OllamaCloud",
+  xAI: "xAI",
   Ollama: "Ollama",
 } as const;
 export type ApiFormat = (typeof ApiFormat)[keyof typeof ApiFormat];

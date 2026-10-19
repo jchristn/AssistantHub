@@ -232,7 +232,7 @@ namespace AssistantHub.Server.OpenApi
                 + "MaxConcurrentRequests (default 2), MaxQueueDepth (default 0), and MaximumTimeoutMs (default 60000) control Partio's per-endpoint concurrency: with MaxQueueDepth 0 requests over the concurrency limit are rejected with 429, while a positive value queues them until a slot frees or the request times out with 504. "
                 + "On success the response is re-serialized with the tool-calling fields read back from the tags, and the endpoint is registered with AssistantHub's health-check service when HealthCheckEnabled and Active are true. "
                 + _Proxied)
-            .Body("Completion endpoint definition. Model, Endpoint, and ApiFormat are required by Partio.", ExampleEndpointRequest())
+            .Body("Completion endpoint definition. Model, Endpoint, and ApiFormat are required by Partio. ApiFormat accepts Ollama, OllamaCloud, OpenAI, xAI, or Gemini. OllamaCloud uses https://ollama.com; xAI defaults to https://api.x.ai. Both require ApiKey. Select a model available to your provider account; cloud model pull/delete are unsupported.", ExampleEndpointRequest())
             .Returns(201, "Endpoint created.", ExampleEndpoint())
             .Errors(400, 401, 403, 500);
 

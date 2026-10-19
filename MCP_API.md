@@ -1,5 +1,19 @@
 # AssistantHub MCP API Reference
 
+### Ollama Cloud and Grok / xAI endpoints
+
+The setup wizard, embedding/completion endpoint forms, system inference settings, REST API, MCP management tools, and C#, JavaScript/TypeScript, and Python SDKs accept `OllamaCloud` and `xAI`. Supply your provider API key and a model available to your account. Embedding availability depends on the provider and model; no embedding model is assumed for either cloud provider.
+
+| Format / Provider | Endpoint | Health check | Tool calling format |
+| --- | --- | --- | --- |
+| `OllamaCloud` | `https://ollama.com` (fixed by Partio) | `/api/tags`, bearer auth | `OllamaChat` |
+| `xAI` (Grok) | `https://api.x.ai` (`/v1` suffix also accepted) | `/v1/models`, bearer auth | `OpenAIChatCompletions` |
+
+Set `ApiFormat` on managed endpoints, or `Inference.Provider` in system configuration. Set `ApiKey`, `Model` (or `Inference.DefaultModel`), and `Endpoint`. Enable `HealthCheckUseAuth` for managed cloud endpoint health checks. Tool calling requires the endpoint's explicit `SupportsToolCalling` capability and the assistant's tool policy. AssistantHub chat uses native Ollama for Ollama Cloud and xAI's OpenAI-compatible chat-completions API, including streaming. Model listing is authenticated; model pull/delete remain local-Ollama-only.
+
+The Compose stack pins Partio server/dashboard to **v0.5.1**, which provides the **PolyPrompt 3.4.0** provider clients used for managed embeddings and completions. AssistantHub has no direct PolyPrompt package dependency.
+
+
 `AssistantHub.McpServer` is a standalone Voltaic-based MCP server that exposes the AssistantHub management and configuration surface as MCP tools. It connects to an upstream AssistantHub REST server with the C# SDK and uses a small REST proxy for exact REST pass-through cases such as configuration replacement, binary download wrappers, and HEAD-style existence checks.
 
 This document is the source of truth for the MCP surface. For the underlying HTTP API, see [REST_API.md](REST_API.md). For Claude/Cursor setup guidance, see [docs/CLAUDE_MCP.md](docs/CLAUDE_MCP.md).

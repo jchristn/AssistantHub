@@ -32,6 +32,7 @@ namespace Test.Automated
         public async Task<IReadOnlyList<AutomatedTestResult>> RunAsync()
         {
             ClearResults();
+            await RunCloudProviderTestsAsync().ConfigureAwait(false);
 
             await ExecuteTestAsync("AssistantToolPolicyResolver.Resolve: disabled policy exposes no runtime tools by default", async () =>
             {

@@ -37,6 +37,15 @@ namespace Test.Automated
         {
             ClearResults();
 
+            await ExecuteTestAsync("Cloud provider defaults and format resolution", async () =>
+            {
+                AssertHelper.AreEqual(InferenceProviderEnum.OllamaCloud, InferenceProviderHelper.FromApiFormat("ollamacloud"), "cloud format");
+                AssertHelper.AreEqual(InferenceProviderEnum.xAI, InferenceProviderHelper.FromApiFormat("xAI"), "xAI format");
+                AssertHelper.AreEqual("https://ollama.com", InferenceProviderHelper.GetDefaultEndpoint(InferenceProviderEnum.OllamaCloud), "cloud endpoint");
+                AssertHelper.AreEqual("https://ollama.com/api/tags", InferenceProviderHelper.GetModelsUrl("https://ollama.com", InferenceProviderEnum.OllamaCloud), "cloud discovery");
+                AssertHelper.AreEqual("https://api.x.ai/v1/chat/completions", InferenceProviderHelper.GetCompletionUrl("https://api.x.ai/v1/", InferenceProviderEnum.xAI, "grok-4", true), "xAI version normalized");
+            });
+
             // ===== EnumTests =====
 
             await ExecuteTestAsync("Enum.DatabaseTypeEnum: all 4 values parse from string", async () =>
@@ -63,7 +72,7 @@ namespace Test.Automated
                 AssertHelper.AreEqual(InferenceProviderEnum.Ollama, Enum.Parse<InferenceProviderEnum>("Ollama"), "Ollama");
                 AssertHelper.AreEqual(InferenceProviderEnum.OpenAI, Enum.Parse<InferenceProviderEnum>("OpenAI"), "OpenAI");
                 AssertHelper.AreEqual(InferenceProviderEnum.Gemini, Enum.Parse<InferenceProviderEnum>("Gemini"), "Gemini");
-                AssertHelper.AreEqual(3, Enum.GetValues<InferenceProviderEnum>().Length, "count");
+                AssertHelper.AreEqual(5, Enum.GetValues<InferenceProviderEnum>().Length, "count");
             });
 
             await ExecuteTestAsync("Enum.FeedbackRatingEnum: all values", async () =>

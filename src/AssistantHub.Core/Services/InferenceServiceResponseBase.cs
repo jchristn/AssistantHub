@@ -125,6 +125,7 @@ namespace AssistantHub.Core.Services
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
             {
+                InferenceProviderHelper.ApplyAuthentication(request, _Settings.Provider, _Settings.ApiKey);
                 HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -147,7 +148,7 @@ namespace AssistantHub.Core.Services
                             SizeBytes = entry.Size,
                             ModifiedUtc = entry.ModifiedAt,
                             OwnedBy = null,
-                            PullSupported = true
+                            PullSupported = _Settings.Provider == InferenceProviderEnum.Ollama
                         });
                     }
                 }

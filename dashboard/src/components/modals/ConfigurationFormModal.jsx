@@ -218,7 +218,7 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
         </>)}
 
         {renderSection('Inference', 'Inference', <>
-          {renderSelect('Inference', 'Provider', 'Provider', ['Ollama', 'OpenAI', 'Gemini'], 'Default AI inference provider for the system')}
+          {renderSelect('Inference', 'Provider', 'Provider', ['Ollama', 'OllamaCloud', 'OpenAI', 'xAI', 'Gemini'], 'Default AI inference provider for the system')}
           {renderTextField('Inference', 'Endpoint', 'Endpoint', 'text', 'Default inference API endpoint URL')}
           {renderTextField('Inference', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the inference provider dashboard or console')}
           {renderTextField('Inference', 'ApiKey', 'API Key', 'password', 'Default API key for inference authentication')}

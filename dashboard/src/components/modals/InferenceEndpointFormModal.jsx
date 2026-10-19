@@ -9,6 +9,7 @@ import {
   getDefaultEndpoint,
   getDefaultHealthCheckUrl,
   getDefaultModel,
+  getDefaultToolCallingApiFormat,
   getHealthCheckUrlForEndpointChange,
   isDefaultHealthCheckUrl
 } from '../../utils/endpointDefaults';
@@ -26,10 +27,6 @@ function isAbsoluteUrl(url) {
   } catch {
     return false;
   }
-}
-
-function getDefaultToolCallingApiFormat(apiFormat) {
-  return apiFormat === 'Ollama' ? 'OllamaChat' : 'OpenAIChatCompletions';
 }
 
 const TOOL_CALLING_LABEL = 'assistanthub:tool-calling';
@@ -186,6 +183,10 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (['OllamaCloud', 'xAI'].includes(form.ApiFormat) && !form.ApiKey?.trim()) {
+      setError('An API key is required for this cloud provider.');
+      return;
+    }
     setSaving(true);
     try {
       const data = {
@@ -259,7 +260,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
 
           <div className="form-row">
             <div className="form-group">
-              <label><Tooltip text="API format used by the inference endpoint (Ollama, OpenAI, or Gemini)">Format</Tooltip></label>
+              <label><Tooltip text="API format used by the inference endpoint (Ollama, Ollama Cloud, OpenAI, Grok / xAI, or Gemini)">Format</Tooltip></label>
               <select
                 value={form.ApiFormat}
                 onChange={(e) => handleChange('ApiFormat', e.target.value)}
@@ -294,11 +295,11 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           </div>
 
           <div className="form-group">
-            <label><Tooltip text="Optional API key for authenticating with the inference endpoint">API Key</Tooltip></label>
+            <label><Tooltip text="API key (required for Ollama Cloud and xAI) for authenticating with the inference endpoint">API Key</Tooltip></label>
             <PasswordInput
               value={form.ApiKey}
               onChange={(e) => handleChange('ApiKey', e.target.value)}
-              placeholder="Optional"
+              placeholder={['OllamaCloud', 'xAI'].includes(form.ApiFormat) ? 'Required' : 'Optional'}
             />
           </div>
         </div>

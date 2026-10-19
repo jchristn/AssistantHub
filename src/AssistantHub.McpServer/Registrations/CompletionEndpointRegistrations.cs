@@ -62,7 +62,7 @@ namespace AssistantHub.McpServer.Registrations
                 new()
                 {
                     Name = "completionendpoint_create",
-                    Description = "Create a completion endpoint.",
+                    Description = "Create a completion endpoint. ApiFormat supports OllamaCloud (https://ollama.com) and xAI (https://api.x.ai); both require ApiKey and a provider-supported Model.",
                     InputSchema = new
                     {
                         type = "object",

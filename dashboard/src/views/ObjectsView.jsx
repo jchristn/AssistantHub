@@ -15,6 +15,7 @@ function ObjectsView({ embedded = false, scopeBucket = '' }) {
   const location = useLocation();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
 
+  const [columnControlsTarget, setColumnControlsTarget] = useState(null);
   const [buckets, setBuckets] = useState([]);
   const [selectedBucket, setSelectedBucket] = useState('');
   const [prefix, setPrefix] = useState('');
@@ -216,6 +217,7 @@ function ObjectsView({ embedded = false, scopeBucket = '' }) {
               </div>
             </div>
             <div className="data-table-toolbar-right">
+              <div className="column-controls-slot" ref={setColumnControlsTarget} />
               <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleUploadFiles} />
               <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                 {uploading ? 'Uploading...' : 'Upload Files'}
@@ -229,7 +231,7 @@ function ObjectsView({ embedded = false, scopeBucket = '' }) {
           ) : (prefixes.length === 0 && objects.length === 0) ? (
             <div className="empty-state"><p>{prefix ? 'This prefix is empty.' : 'This bucket is empty.'}</p></div>
           ) : (
-            <ConfigurableTable tableId="objects-1" className="data-table">
+            <ConfigurableTable tableId="objects-1" controlsTarget={columnControlsTarget} className="data-table">
               <thead>
                 <tr>
                   <th><Tooltip text="File or folder name within the bucket">Name</Tooltip></th>

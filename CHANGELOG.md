@@ -3,11 +3,13 @@
 ## 0.17.2
 
 ### Fixed
+- Put Columns inside the pagination toolbar on every paginated dashboard table, and inside the existing model/object toolbar. Column menus float above content without adding another row or clipping inside table containers.
 - Align all endpoint surfaces with current Partio: preserve nested provider/auth settings, resolve masked credentials through audited internal reveal reads, and delegate provider-aware health checks. Never send masked or unrelated global credentials to chat providers.
 - Inference and embedding create/edit forms now change connection fields by provider: Ollama Cloud uses a required Bearer Token and the fixed `https://ollama.com` endpoint; Gemini uses its API-key header, and other providers show their applicable credential and model guidance. Missing credentials disable saving, and validation/save errors render without an undefined `setError` call.
 - An outdated configured Partio service rejecting `OllamaCloud`/`xAI` now produces an actionable dependency-version error. Compose always refreshes the pinned Partio images; documented how to replace already-running containers.
 
 ### Changed
+- Review default visible columns for every dashboard table. Start with identifying fields and the table’s operational status/results; keep extra metadata, bearer tokens, and detailed diagnostics optional. Preserve saved preferences and add Reset to defaults.
 - Partio server/dashboard stay pinned to v0.5.2. Native chat adapters directly use PolyPrompt 3.4.0 (and its required SyslogLogging 2.4.0). Application/package versions are unchanged.
 - Pin Partio server/dashboard to v0.5.1 (PolyPrompt 3.4.0 provider clients), including the benchmark server image. Project/package versions remain unchanged.
 - **Package updates**: EasySlack 1.1.2, Voltaic 2.2.1 and Timestamps 1.0.13. EasySlack 1.1.2 fixes automatic reconnects: it runs one receive loop per connection, retries a failed reconnect with backoff, and cancels a pending reconnect when the connector is stopped. Voltaic 2.2.1 updates only its dependencies, with no API or behavior changes.

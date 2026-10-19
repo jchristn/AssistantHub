@@ -13,6 +13,8 @@ function Fixture() {
   const [rows, setRows] = useState(1);
   const [clicked, setClicked] = useState(0);
   const fetchData = useCallback(async () => [{ Id: 'one', Name: 'Zulu', Status: 'Ready' }, { Id: 'two', Name: 'Alpha', Status: 'Pending' }], []);
+  const fetchEndpoints = useCallback(async () => [{ Id: 'ep_one', Name: 'Production', Model: 'model', Endpoint: 'https://example.test', ApiFormat: 'OpenAI', Active: true, Health: 'Healthy', CreatedUtc: '2026-01-01' }], []);
+  const endpointColumns = ['Id', 'Name', 'Model', 'Endpoint', 'ApiFormat', 'Active', 'Health', 'CreatedUtc'].map(key => ({ key, label: key }));
   const columns = [{ key: 'Id', label: 'ID' }, { key: 'Name', label: 'Name', filterable: true }, { key: 'Status', label: 'Status' }, { key: 'Audit', label: 'Audit', required: true }];
   return <>
     <button onClick={() => setModal(true)}>Open table dialog</button>
@@ -30,6 +32,7 @@ function Fixture() {
       <thead><tr><th>Name</th><th>Metric</th></tr></thead><tbody><tr><td>Independent</td><td>99</td></tr></tbody>
     </ConfigurableTable>
     <DataTable tableId="fixture-data" columns={columns} fetchData={fetchData} getRowActions={() => [{ label: 'Example action', onClick() {} }]} onBulkDelete={() => {}} onRowClick={() => setClicked(value => value + 1)} />
+    <DataTable tableId="inferenceendpoints-list-1" columns={endpointColumns} fetchData={fetchEndpoints} />
     <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ table: ({ children }) => <ConfigurableTable tableId="fixture-markdown" className="data-table">{children}</ConfigurableTable> }}>
       {'| Item | Description |\n| --- | --- |\n| Markdown | Content |'}
     </ReactMarkdown>

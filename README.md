@@ -415,7 +415,7 @@ docker compose up -d
 
 ### Dashboards
 
-Every AssistantHub dashboard table has a **Columns** control, including list views, search results, analytics, dialogs, tool activity, and Markdown tables in chat/feedback. Uncheck optional columns to hide them; **Show all columns** restores them. Choices are saved per table in the current browser. The first identifying column, row selection, and row actions are required; result/status columns also stay visible in outcome tables. Required columns are labeled and cannot be unchecked. Hiding a filtered or sorted column in list views clears that column's filter/sort.
+Every AssistantHub dashboard table has a **Columns** control, including list views, search results, analytics, dialogs, tool activity, and Markdown tables in chat/feedback. The selector is part of the pagination row on paginated tables and the existing toolbar on model/object tables. Defaults are chosen per table to emphasize identifying fields, operational status, and useful results while keeping extra metadata and diagnostic details optional. Uncheck optional columns to hide them; **Show all columns** restores them and **Reset to defaults** restores the curated starting view. Choices are saved per table in the current browser. The first identifying column, row selection, and row actions are required; result/status columns also stay visible in outcome tables. Required columns are labeled and cannot be unchecked. Hiding a filtered or sorted column in list views clears that column's filter/sort.
 
 | Dashboard | URL | Default Credentials |
 |---|---|---|

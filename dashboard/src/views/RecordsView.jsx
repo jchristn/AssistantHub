@@ -18,6 +18,7 @@ function RecordsView({ embedded = false, scopeCollectionId = '' }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const location = useLocation();
+  const [columnControlsTarget, setColumnControlsTarget] = useState(null);
   const [searchParams] = useSearchParams();
   const requestedCollection = searchParams.get('collectionId') || location.state?.collectionId || '';
 
@@ -162,13 +163,8 @@ function RecordsView({ embedded = false, scopeCollectionId = '' }) {
 
       {selectedCollection && (
         <div className="data-table-container">
-          <div className="data-table-toolbar">
-            <div className="data-table-toolbar-left" />
-            <div className="data-table-toolbar-right">
-              <button className="btn btn-primary btn-sm" onClick={() => setShowCreateRecord(true)}>Create Record</button>
-            </div>
-          </div>
           <Pagination
+            columnControlsRef={setColumnControlsTarget}
             totalRecords={totalRecords}
             maxResults={pageSize}
             currentPage={currentPage}
@@ -176,13 +172,15 @@ function RecordsView({ embedded = false, scopeCollectionId = '' }) {
             onPageSizeChange={(size) => { setPageSize(setStoredPageSize(size, 25)); setCurrentPage(1); }}
             onRefresh={handleRefresh}
             refreshState={refreshState}
-          />
+          >
+            <button className="btn btn-primary btn-sm" onClick={() => setShowCreateRecord(true)}>Create Record</button>
+          </Pagination>
           {loading ? (
             <div className="loading"><div className="spinner" /></div>
           ) : filteredData.length === 0 ? (
             <div className="empty-state"><p>{documentKeyFilter ? 'No records match the selected document filter.' : 'No records found in this collection.'}</p></div>
           ) : (
-            <ConfigurableTable tableId="records-1" className="data-table">
+            <ConfigurableTable tableId="records-1" controlsTarget={columnControlsTarget} className="data-table">
               <thead>
                 <tr>
                   {columns.map((col) => (

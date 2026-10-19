@@ -27,6 +27,7 @@ const extractRows = (result) => {
 };
 
 function DataTable({ tableId, columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete, onRowClick }) {
+  const [columnControlsTarget, setColumnControlsTarget] = useState(null);
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getStoredPageSize(10));
@@ -195,16 +196,16 @@ function DataTable({ tableId, columns, fetchData, getRowActions, refreshTrigger,
 
   return (
     <div className="data-table-container">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <Pagination
-          totalRecords={totalRecords}
-          maxResults={pageSize}
-          currentPage={currentPage}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-          onRefresh={handleRefresh}
-          refreshState={refreshState}
-        />
+      <Pagination
+        columnControlsRef={setColumnControlsTarget}
+        totalRecords={totalRecords}
+        maxResults={pageSize}
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        onRefresh={handleRefresh}
+        refreshState={refreshState}
+      >
         {onBulkDelete && selectedIds.size > 0 && (
           <button
             className="btn btn-danger"
@@ -215,7 +216,7 @@ function DataTable({ tableId, columns, fetchData, getRowActions, refreshTrigger,
             {bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
           </button>
         )}
-      </div>
+      </Pagination>
       {loading ? (
         <div className="loading"><div className="spinner" /></div>
       ) : error ? (
@@ -223,7 +224,7 @@ function DataTable({ tableId, columns, fetchData, getRowActions, refreshTrigger,
       ) : allData.length === 0 ? (
         <div className="empty-state"><p>No records found.</p></div>
       ) : (
-        <ConfigurableTable tableId={tableId} onColumnVisibilityChange={setHiddenColumnKeys} className="data-table">
+        <ConfigurableTable tableId={tableId} controlsTarget={columnControlsTarget} onColumnVisibilityChange={setHiddenColumnKeys} className="data-table">
           <thead>
             <tr>
               {onBulkDelete && (

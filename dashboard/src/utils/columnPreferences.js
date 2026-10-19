@@ -1,3 +1,4 @@
+import { TABLE_COLUMN_DEFAULTS } from './tableColumnDefaults.js';
 const PREFIX = 'assistanthub.table.columns.';
 
 export function normalizeHiddenColumns(columns, hidden = []) {
@@ -7,10 +8,12 @@ export function normalizeHiddenColumns(columns, hidden = []) {
 
 export function readHiddenColumns(tableId) {
   try {
-    const value = JSON.parse(window.localStorage.getItem(PREFIX + tableId) || '[]');
-    return Array.isArray(value) ? value.filter(key => typeof key === 'string') : [];
+    const stored = window.localStorage.getItem(PREFIX + tableId);
+    if (stored === null) return null;
+    const value = JSON.parse(stored);
+    return Array.isArray(value) ? value.filter(key => typeof key === 'string') : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -20,4 +23,13 @@ export function storeHiddenColumns(tableId, hidden) {
   } catch {
     // Column selection still works when browser storage is unavailable.
   }
+}
+
+export function resolveHiddenColumns(tableId, columns, saved, defaults = TABLE_COLUMN_DEFAULTS[tableId]) {
+  const hidden = saved ?? (Array.isArray(defaults) ? columns.filter(column => !defaults.includes(column.key)).map(column => column.key) : []);
+  return normalizeHiddenColumns(columns, hidden);
+}
+
+export function resetHiddenColumns(tableId) {
+  try { window.localStorage.removeItem(PREFIX + tableId); } catch { /* Session-only defaults still work. */ }
 }

@@ -23,7 +23,7 @@ function RefreshButton({ onClick, state }) {
   );
 }
 
-function Pagination({ totalRecords, maxResults, currentPage, onPageChange, onPageSizeChange, onRefresh, refreshState }) {
+function Pagination({ totalRecords, maxResults, currentPage, onPageChange, onPageSizeChange, onRefresh, refreshState, columnControlsRef, children }) {
   const totalPages = Math.max(1, Math.ceil(totalRecords / maxResults));
 
   return (
@@ -37,6 +37,8 @@ function Pagination({ totalRecords, maxResults, currentPage, onPageChange, onPag
         <span>per page</span>
       </div>
       <div className="data-table-toolbar-right">
+        {children}
+        <div className="column-controls-slot" ref={columnControlsRef} />
         <div className="pagination">
           <button onClick={() => onPageChange(1)} disabled={currentPage <= 1} title="First">&laquo;</button>
           <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1} title="Previous">&lsaquo;</button>

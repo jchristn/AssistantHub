@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
+import { TABLE_COLUMN_DEFAULTS } from '../src/utils/tableColumnDefaults.js';
 const root = new URL('../src/', import.meta.url);
 async function files(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -18,8 +19,22 @@ test('every dashboard table uses the shared column control with a stable prefere
       if (id) {
         assert.ok(!ids.has(id), `Duplicate table preference ID: ${id}`);
         ids.add(id);
+        assert.ok(Object.hasOwn(TABLE_COLUMN_DEFAULTS, id), `Missing reviewed default columns: ${id}`);
       }
     }
   }
   assert.ok(ids.size >= 35, 'Coverage should include list views, dialogs, analytics, search, and Markdown');
+});
+
+test('all paginated tables attach column controls to the pagination toolbar', async () => {
+  let count = 0;
+  for (const file of await files(root)) {
+    const source = await readFile(file, 'utf8');
+    for (const match of source.matchAll(/<Pagination\s+([^>]+)>/g)) {
+      assert.ok(/columnControlsRef=/.test(match[1]), `Pagination missing Columns slot in ${file.pathname}`);
+      assert.ok(/<ConfigurableTable[^>]+controlsTarget=/.test(source), `Table missing toolbar target in ${file.pathname}`);
+      count++;
+    }
+  }
+  assert.equal(count, 2, 'shared list tables and the custom records view are both covered');
 });

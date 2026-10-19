@@ -1,5 +1,6 @@
 import React, { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
-import { normalizeHiddenColumns, readHiddenColumns, storeHiddenColumns } from '../utils/columnPreferences';
+import { createPortal } from 'react-dom';
+import { normalizeHiddenColumns, readHiddenColumns, storeHiddenColumns, resolveHiddenColumns, resetHiddenColumns } from '../utils/columnPreferences';
 import './ConfigurableTable.css';
 
 const NO_REQUIRED_COLUMNS = [];
@@ -30,10 +31,15 @@ function discoverColumns(table, requiredColumns) {
   });
 }
 
-export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIRED_COLUMNS, onColumnVisibilityChange, children, ...props }) {
+export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIRED_COLUMNS, onColumnVisibilityChange, controlsTarget, defaultVisibleColumns, children, ...props }) {
   const tableRef = useRef(null);
   const generatedId = useId();
   const controlsRef = useRef(null);
+  const optionsRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({});
+  const defaultsRef = useRef(defaultVisibleColumns);
+  defaultsRef.current = defaultVisibleColumns;
   const originalSpans = useRef(new WeakMap());
   const [columns, setColumns] = useState([]);
   const [hidden, setHidden] = useState(() => readHiddenColumns(tableId));
@@ -55,7 +61,7 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
       schemaRef.current = signature;
       setColumns(schema);
     }
-    const hiddenKeys = new Set(normalizeHiddenColumns(schema, hiddenRef.current));
+    const hiddenKeys = new Set(resolveHiddenColumns(tableId, schema, hiddenRef.current, defaultsRef.current));
     const visibleCount = schema.length - hiddenKeys.size;
     const visibility = JSON.stringify([...hiddenKeys]);
     if (visibilityRef.current !== visibility) {
@@ -79,9 +85,11 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
         index += width;
       }
     }
-  }, []);
+  }, [tableId]);
 
   useLayoutEffect(() => {
+    schemaRef.current = "";
+    visibilityRef.current = "";
     setHidden(readHiddenColumns(tableId));
   }, [tableId]);
 
@@ -90,7 +98,7 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
     const observer = new MutationObserver(applyColumns);
     observer.observe(tableRef.current, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
-  }, [applyColumns, children, hidden, requiredColumns]);
+  }, [applyColumns, children, hidden, requiredColumns, defaultVisibleColumns]);
 
   useLayoutEffect(() => {
     const close = event => {
@@ -101,7 +109,7 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
         event.stopPropagation();
         details.open = false;
         details.querySelector('summary')?.focus();
-      } else if (!details.contains(event.target)) {
+      } else if (!details.contains(event.target) && !optionsRef.current?.contains(event.target)) {
         details.open = false;
       }
     };
@@ -113,32 +121,62 @@ export default function ConfigurableTable({ tableId, requiredColumns = NO_REQUIR
     };
   }, []);
 
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const position = () => {
+      const bounds = controlsRef.current.getBoundingClientRect();
+      if (bounds.bottom < 0 || bounds.top > window.innerHeight) { controlsRef.current.open = false; return; }
+      const below = window.innerHeight - bounds.bottom;
+      const width = optionsRef.current.getBoundingClientRect().width;
+      setMenuPosition({
+        position: 'fixed', right: Math.max(8, Math.min(window.innerWidth - bounds.right, window.innerWidth - width - 8)),
+        ...(below >= Math.min(320, bounds.top) ? { top: bounds.bottom + 6 } : { bottom: window.innerHeight - bounds.top + 6 }),
+        maxHeight: Math.max(100, Math.min(320, Math.max(below, bounds.top) - 16)),
+      });
+    };
+    position();
+    optionsRef.current?.querySelector('input:not(:disabled), button')?.focus({ preventScroll: true });
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', position, true);
+    return () => { window.removeEventListener('resize', position); window.removeEventListener('scroll', position, true); };
+  }, [menuOpen, controlsTarget]);
+
   const update = next => {
     const normalized = normalizeHiddenColumns(columns, next);
     setHidden(normalized);
     storeHiddenColumns(tableId, normalized);
   };
-  const hiddenKeys = new Set(normalizeHiddenColumns(columns, hidden));
+  const effectiveHidden = resolveHiddenColumns(tableId, columns, hidden, defaultVisibleColumns);
+  const hiddenKeys = new Set(effectiveHidden);
+  const optionsId = generatedId + '-columns';
+  const controls = (
+    <div className="column-controls" data-table-controls-for={tableId}>
+      <details ref={controlsRef} onToggle={event => setMenuOpen(event.currentTarget.open)}>
+        <summary aria-controls={optionsId} aria-expanded={menuOpen}>Columns <span>({columns.length - hiddenKeys.size}/{columns.length})</span></summary>
+      </details>
+    </div>
+  );
 
   return (
     <div className="configurable-table" data-table-id={tableId}>
-      <div className="column-controls">
-        <details ref={controlsRef}>
-          <summary aria-controls={props.id || generatedId}>Columns <span>({columns.length - hiddenKeys.size}/{columns.length})</span></summary>
-          <fieldset className="column-options" aria-label="Visible columns">
-            <legend>Visible columns</legend>
-            {columns.map(column => (
-              <label key={column.key}>
-                <input type="checkbox" checked={!hiddenKeys.has(column.key)} disabled={column.required}
-                  onChange={event => update(event.target.checked ? hidden.filter(key => key !== column.key) : [...hidden, column.key])} />
-                <span>{column.label}</span>
-                {column.required && <small>Required</small>}
-              </label>
-            ))}
+      {controlsTarget ? createPortal(controls, controlsTarget) : controls}
+      {menuOpen && createPortal(
+        <fieldset ref={optionsRef} id={optionsId} className="column-options" style={menuPosition} aria-label="Visible columns" data-column-options-for={tableId}>
+          <legend>Visible columns</legend>
+          {columns.map(column => (
+            <label key={column.key}>
+              <input type="checkbox" checked={!hiddenKeys.has(column.key)} disabled={column.required}
+                onChange={event => update(event.target.checked ? effectiveHidden.filter(key => key !== column.key) : [...effectiveHidden, column.key])} />
+              <span>{column.label}</span>
+              {column.required && <small>Required</small>}
+            </label>
+          ))}
+          <div className="column-options-actions">
             <button type="button" className="btn btn-secondary" onClick={() => update([])}>Show all columns</button>
-          </fieldset>
-        </details>
-      </div>
+            <button type="button" className="btn btn-secondary" onClick={() => { resetHiddenColumns(tableId); setHidden(null); }}>Reset to defaults</button>
+          </div>
+        </fieldset>, document.body
+      )}
       <table {...props} id={props.id || generatedId} ref={tableRef}>{children}</table>
     </div>
   );

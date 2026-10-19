@@ -22,6 +22,7 @@ function formatDate(dateStr) {
 function ModelsView() {
   const { serverUrl, credential, isAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const [columnControlsTarget, setColumnControlsTarget] = useState(null);
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showPull, setShowPull] = useState(false);
@@ -208,14 +209,14 @@ function ModelsView() {
             </button>
             <span>{models.length} record{models.length !== 1 ? 's' : ''}</span>
           </div>
-          <div className="data-table-toolbar-right" />
+          <div className="data-table-toolbar-right"><div className="column-controls-slot" ref={setColumnControlsTarget} /></div>
         </div>
         {loading ? (
           <div className="loading"><div className="spinner" /></div>
         ) : models.length === 0 ? (
           <div className="empty-state"><p>No models found.</p></div>
         ) : (
-          <ConfigurableTable tableId="models-1" className="data-table">
+          <ConfigurableTable tableId="models-1" controlsTarget={columnControlsTarget} className="data-table">
             <thead>
               <tr>
                 <th><Tooltip text="Model identifier (e.g. gpt-4o, gemma3:4b)">Name</Tooltip></th>
